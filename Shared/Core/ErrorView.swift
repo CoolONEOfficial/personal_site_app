@@ -8,13 +8,12 @@
 import SwiftUI
 
 struct ErrorView: View {
+    let error: Error
+    
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
-    }
-}
-
-struct ErrorView_Previews: PreviewProvider {
-    static var previews: some View {
-        ErrorView()
+        VStack(alignment: .center, spacing: 32) {
+            Image(systemName: "exclamationmark.triangle").resizable().frame(width: 100, height: 100)
+            Text(error.asAFError?.errorDescription ?? error.localizedDescription).multilineTextAlignment(.center)
+        }.padding(32)
     }
 }

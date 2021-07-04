@@ -15,4 +15,8 @@ enum ContentType: String, CaseIterable, Identifiable {
     case achievements
     
     var id: RawValue { rawValue }
+
+    var name: String {
+        rawValue.capitalizingFirstLetter()
+    }
 }
