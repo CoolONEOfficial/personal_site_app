@@ -1,0 +1,6 @@
+[submodule "Shared/personal_site"]
+	path = Shared/personal_site
+	url = https://github.com/CoolONEOfficial/personal_site
+[submodule "Shared/publish"]
+	path = Shared/publish
+	url = https://github.com/JohnSundell/Publish
