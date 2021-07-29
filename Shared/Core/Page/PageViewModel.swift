@@ -18,10 +18,21 @@ enum PageViewState {
     case error(Error)
     case loading
 
+    var page: Page? {
+        get {
+            if case let .page(page) = self { return page }
+            return nil
+        }
+        set {
+            guard let newValue = newValue else { return }
+            self = .page(newValue)
+        }
+    }
+
     mutating func updatePage(completion: (Page) -> Void) {
-        guard case let .page(page) = self else { return }
+        guard let page = self.page else { return }
         completion(page)
-        self = .page(page)
+        self.page = page
     }
 }
 
@@ -33,7 +44,7 @@ protocol PageViewModeling: ObservableObject {
     var logo: ImageOrUrl? { get set }
     var singleImage: ImageOrUrl? { get set }
     func updateView()
-    func apply(filename: String?, dismissCompletion: @escaping () -> Void)
+    func apply(filename: String, dismissCompletion: @escaping () -> Void)
     func onAppear()
 }
 
@@ -125,9 +136,9 @@ class PageViewModel: PageViewModeling {
         self.objectWillChange.send()
     }
 
-    func apply(filename: String?, dismissCompletion: @escaping () -> Void) {
-        guard case let .page(page) = state,
-              let content = page.string() else { return }
+    func apply(filename: String, dismissCompletion: @escaping () -> Void) {
+        guard let page = state.page,
+              let content = page.string()?.data(using: .utf8)?.base64EncodedString() else { return }
 
         defer { state = .loading }
         
@@ -135,13 +146,12 @@ class PageViewModel: PageViewModeling {
         case let .item(item):
             githubService.putItem(item: item, content: content, completion: { self.putCompleted($0, dismissCompletion) })
         case let .type(type):
-            guard let filename = filename else { fatalError() }
             githubService.putItem(request: .init(content: content, sha: nil), path: "\(type.rawValue)/\(filename)", completion: { self.putCompleted($0, dismissCompletion) })
         }
     }
     
     func putCompleted(_ result: Result<Void, Error>, _ dismissCompletion: () -> Void) {
-        
+        debugPrint("")
     }
 }
 

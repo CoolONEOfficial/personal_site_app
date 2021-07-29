@@ -75,7 +75,7 @@ struct PageView<Model: PageViewModeling>: View {
                 return Alert(
                     title: Text("Are you sure you want to apply changes?"),
                     message: Text(""),
-                    primaryButton: .default(Text("Yes"), action: { viewModel.apply(filename: nil, dismissCompletion: dismiss) }),
+                    primaryButton: .default(Text("Yes"), action: { viewModel.apply(filename: filename, dismissCompletion: dismiss) }),
                     secondaryButton: .cancel()
                 )
             }

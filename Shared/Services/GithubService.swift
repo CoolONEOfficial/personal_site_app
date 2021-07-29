@@ -130,7 +130,7 @@ struct PutItemResponse: Codable {
 }
 
 struct PutItemRequest: Encodable {
-    let message: String = "Update content"
+    var message: String = "Update content"
     let content: String
     let sha: String?
 }
@@ -145,7 +145,7 @@ class GithubService: GithubServicing {
     static let apiBase = "https://api.github.com"
     static let base = "https://github.com"
     
-    private let headers = HTTPHeaders([ .accept("application/vnd.github.v3+json") ])
+    private let headers = HTTPHeaders([ .accept("application/vnd.github.v3+json"), .authorization("token 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") ])
     
     static let repo = "CoolONEOfficial/personal_site"
 
@@ -177,7 +177,7 @@ class GithubService: GithubServicing {
     }
 
     func putItem(request: PutItemRequest, path: String, completion: @escaping (Result<Void, Error>) -> Void) {
-        AF.request("\(Self.apiBase)/repos/\(Self.repo)/contents/\(path)", method: .get, parameters: request, headers: headers)
+        AF.request("\(Self.apiBase)/repos/\(Self.repo)/contents/\(path)", method: .put, parameters: request, encoder: JSONParameterEncoder.default, headers: headers)
             .responseDecodable(of: PutItemResponse.self, decoder: decoder) { completion($0.result.mapError { $0 as Error }.map {_ in ()}) }
     }
 
