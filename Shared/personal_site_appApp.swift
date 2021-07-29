@@ -14,9 +14,4 @@ struct personal_site_appApp: App {
             MainView<MainViewModel>(viewModel: MainViewModel())
         }
     }
-    
-    func test() {
-        
-        //EventType()
-    }
 }

@@ -9,71 +9,120 @@ import SwiftUI
 import Parma
 
 struct PageView<Model: PageViewModeling>: View {
-    @StateObject var viewModel: Model
+    @ObservedObject var viewModel: Model
+    @State var finishAlert: Bool = false
+    @State var filename: String
+    @Binding var isPageActive: Bool
     
     var body: some View {
-        if let error = viewModel.error {
+        switch viewModel.state {
+        case .loading:
+            ProgressView("Loading...").onFirstAppear(perform: viewModel.onAppear)
+            
+        case let .error(error):
             ErrorView(error: error)
-        } else if let page = viewModel.page {
-            GeometryReader { geo in
-                if geo.size.width > 600 {
-                    HStack(spacing: 32) {
-                        textEditor(page)
-                        parma(page)
-                    }//.padding(geo.safeAreaInsets).edgesIgnoringSafeArea(.vertical)
-                } else {
-                    editorOrPreview(page)
-                    //.padding(geo.safeAreaInsets).edgesIgnoringSafeArea(.vertical)
-                        .toolbar {
-                            ToolbarItem(placement: placement) {
-                                Picker(
-                                    selection: $viewModel.editor,
-                                    label: Text("")) {
-                                    Text("Edit").tag(true)
-                                    Text("Preview").tag(false)
-                                }.pickerStyle(SegmentedPickerStyle()).frame(width: 160)
-                            }
-                        }
-                }
-            }
-        } else {
-            ProgressView("Loading...")
+            
+        case let .page(page):
+            #if os(iOS)
+                pageView(page)
+                .navigationBarOpaque()
+                .navigationBarTitleDisplayMode(.inline)
+            #else
+                pageView(page)
+            #endif
         }
     }
+    
+    func pageView(_ page: Page) -> some View {
+        GeometryReader { geo in
+            if geo.size.width > 600 {
+                NavigationView {
+                    editorView(page: page)
+                    metadataView(page: page)
+                    PreviewView(page: page, attachedImages: $viewModel.attachedImages)
+                }
+            } else {
+                tabs(page)
+                    .toolbar {
+                        ToolbarItem(placement: placement) {
+                            Picker(
+                                selection: $viewModel.tab,
+                                label: Text("")) {
+                                Text("Edit").tag(Tab.editor)
+                                Text("Meta").tag(Tab.metadata)
+                                Text("Preview").tag(Tab.preview)
+                            }.pickerStyle(SegmentedPickerStyle()).frame(width: 180)
+                        }
+                        ToolbarItem {
+                            Button(action: {
+                                finishAlert = true
+                            }) {
+                                ImageView(systemName: "checkmark").imageScale(.large)
+                            }
+                        }
+                    }
+            }
+        }
+        .alert(isPresented: $finishAlert) {
+            if viewModel.isNewPage {
+                return Alert(
+                    title: Text("Are you sure you want to create page?"),
+                    message: Text(""),
+                    primaryButton: .default(Text("Yes"), action: { viewModel.apply(filename: filename, dismissCompletion: dismiss) }),
+                    secondaryButton: .cancel()
+                )
+            } else {
+                return Alert(
+                    title: Text("Are you sure you want to apply changes?"),
+                    message: Text(""),
+                    primaryButton: .default(Text("Yes"), action: { viewModel.apply(filename: nil, dismissCompletion: dismiss) }),
+                    secondaryButton: .cancel()
+                )
+            }
+        }
+    }
+    
+    func dismiss() {
+        isPageActive = false
+    }
+
     var placement: ToolbarItemPlacement {
         #if os(macOS)
             return .navigation
         #else
-            return .automatic
+            return .principal
         #endif
     }
     
     @ViewBuilder
-    func editorOrPreview(_ page: Page) -> some View {
-        ZStack {
-            textEditor(page)
-                .opacity(viewModel.editor ? 1 : 0)
-            if !viewModel.editor {
-                parma(page)
-            }
+    func tabs(_ page: Page) -> some View {
+        switch viewModel.tab {
+        case .preview:
+            PreviewView(page: page, attachedImages: $viewModel.attachedImages)
+            
+        case .editor:
+            editorView(page: page)
+            
+        case .metadata:
+            metadataView(page: page)
         }
-    }
-    
-    func textEditor(_ page: Page) -> some View {
-        TextEditor(text: .init(get: { page.content }, set: {
-            viewModel.page?.content = $0
-            viewModel.updateView()
-        }))
     }
 
-    func parma(_ page: Page) -> some View {
-        ScrollView(.vertical) {
-            VStack(alignment: .leading) {
-                Parma(page.content, alignment: .leading).padding(8)
-            }.frame(maxWidth: .infinity, alignment: .leading)
-        }
+    func editorView(page: Page) -> some View {
+        EditorView(text: .init(get: { page.content }, set: { text in
+            viewModel.state.updatePage { page in
+                page.content = text
+            }
+            viewModel.updateView()
+        }), attachedImages: $viewModel.attachedImages)
+        
+    }
+
+    func metadataView(page: Page) -> some View {
+        MetadataView(metadata: .init(get: { page.metadata }, set: { meta in
+            page.metadata = meta
+            viewModel.updateView()
+        }), filename: $filename, logo: $viewModel.logo, singleImage: $viewModel.singleImage)
         
     }
 }
-
-

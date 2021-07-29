@@ -12,7 +12,7 @@ struct ErrorView: View {
     
     var body: some View {
         VStack(alignment: .center, spacing: 32) {
-            Image(systemName: "exclamationmark.triangle").resizable().frame(width: 100, height: 100)
+            ImageView(systemName: "exclamationmark.triangle").resizable().frame(width: 100, height: 100)
             Text(error.asAFError?.errorDescription ?? error.localizedDescription).multilineTextAlignment(.center)
         }.padding(32)
     }

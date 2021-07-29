@@ -8,46 +8,79 @@
 import SwiftUI
 import Parma
 
-struct ListEntry: Identifiable, Hashable, Equatable {
-    enum Data: Equatable, Hashable {
-        case section(ContentType)
-        case item(ContentItem)
+enum ListEntry: Equatable, Hashable, Identifiable {
+    case section(ContentType, [Self])
+    case item(ContentItem, ContentType)
+    case new(ContentType)
+
+    var id: String {
+        switch self {
+        case let .item(item, _):
+            return item.id
+        
+        case let .section(type, _):
+            return type.id
+
+        case let .new(type):
+            return type.id
+        }
     }
     
-    let id = UUID()
-    let data: Data
-    var children: [Self]? = nil
+    var children: [Self]? {
+        guard case let .section(type, children) = self else { return nil }
+        return children + [ .new(type) ]
+    }
 }
 
 struct MainView<Model: MainViewModeling>: View {
-    @StateObject var viewModel: Model
+    @ObservedObject var viewModel: Model
+    @State var isPageActive = [String: [String: Bool]]()
+
+    func data(_ items: [ContentType: [ContentItem]]) -> [ListEntry] {
+        items.enumerated().map(\.element).sorted { $0.key.rawValue < $1.key.rawValue }.map { entry in .section(entry.key, entry.value.map { .item($0, entry.key) }) }
+    }
+    
+    func isActive(_ k1: String, _ k2: String) -> Binding<Bool> {
+        Binding(get: { isPageActive[k1, default: [:]][k2, default: false] }, set: { isPageActive[k1, default: [:]][k2] = $0 })
+    }
+    
+    func list(_ items: [ContentType: [ContentItem]]) -> some View {
+        let data = data(items)
+        return List(data, id: \.self, children: \.children) { entry in
+            switch entry {
+            case let .section(type, _):
+                Text(type.name)
+            case let .item(item, type):
+                let isActive = isActive(type.rawValue, item.name)
+                NavigationLink(item.name, destination: PageView(viewModel: PageViewModel(item: item), filename: item.name, isPageActive: isActive), isActive: isActive)
+            case let .new(type):
+                let isActive = isActive(type.rawValue, "new")
+                NavigationLink("Create new", destination: PageView(viewModel: PageViewModel(type: type), filename: "", isPageActive: isActive), isActive: isActive)
+            }
+        }
+        .toolbar {
+            #if os(macOS)
+            ToolbarItem(placement: .navigation) {
+                
+                Button(action: toggleSidebar) {
+                    ImageView(systemName: "sidebar.left")
+                }
+            }
+            #endif
+        }
+    }
 
     @ViewBuilder
     var entriesSection: some View {
-        let data = viewModel.items.enumerated().map(\.element).map { ListEntry(data: .section($0.key), children: $0.value.map { ListEntry(data: .item($0)) }) }
-        if let error = viewModel.error {
-            ErrorView(error: error)
-        } else if !data.isEmpty {
-            List(data, children: \.children) { entry in
-                switch entry.data {
-                case let .section(type):
-                    Text(type.name)
-                
-                case let .item(item):
-                    NavigationLink(item.name, destination: PageView(viewModel: PageViewModel(item: item)))
-                }
-            }
-            .toolbar {
-                #if os(macOS)
-                ToolbarItem(placement: .navigation){
-                    Button(action: toggleSidebar) {
-                        Image(systemName: "sidebar.left")
-                    }
-                }
-                #endif
-            }
-        } else {
+        switch viewModel.state {
+        case .loading:
             ProgressView("Loading...")
+
+        case let .error(error):
+            ErrorView(error: error)
+
+        case let .items(items):
+            list(items)
         }
     }
     
@@ -62,8 +95,8 @@ struct MainView<Model: MainViewModeling>: View {
             entriesSection
                 .navigationTitle("Sections")
                 .listStyle(SidebarListStyle())
-        }.onAppear {
-            viewModel.viewAppear()
+        }.onFirstAppear {
+            viewModel.onAppear()
             #if os(iOS)
             UIScrollView.appearance().keyboardDismissMode = .onDrag
             #endif
