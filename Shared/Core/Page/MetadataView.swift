@@ -146,8 +146,8 @@ struct MetadataView: View {
             TextField(
                 "Organisation",
                 text: .init(
-                    get: { book.organisation },
-                    set: { metadata.book?.organisation = $0 }
+                    get: { book.organisation ?? .init() },
+                    set: { metadata.book?.organisation = $0.isEmpty ? nil : $0 }
                 )
             )
         }
