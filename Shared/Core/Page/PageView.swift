@@ -39,7 +39,7 @@ struct PageView<Model: PageViewModeling>: View {
                 NavigationView {
                     editorView(page: page)
                     metadataView(page: page)
-                    PreviewView(page: page, attachedImages: $viewModel.attachedImages)
+                    PreviewView(page: page, attachedImages: $viewModel.attachedImages.value)
                 }
             } else {
                 tabs(page)
@@ -98,7 +98,7 @@ struct PageView<Model: PageViewModeling>: View {
     func tabs(_ page: Page) -> some View {
         switch viewModel.tab {
         case .preview:
-            PreviewView(page: page, attachedImages: $viewModel.attachedImages)
+            PreviewView(page: page, attachedImages: $viewModel.attachedImages.value)
             
         case .editor:
             editorView(page: page)
@@ -114,7 +114,7 @@ struct PageView<Model: PageViewModeling>: View {
                 page.content = text
             }
             viewModel.updateView()
-        }), attachedImages: $viewModel.attachedImages)
+        }), attachedImages: $viewModel.attachedImages.value)
         
     }
 
@@ -122,7 +122,7 @@ struct PageView<Model: PageViewModeling>: View {
         MetadataView(metadata: .init(get: { page.metadata }, set: { meta in
             page.metadata = meta
             viewModel.updateView()
-        }), filename: $filename, logo: $viewModel.logo, singleImage: $viewModel.singleImage)
+        }), filename: $filename, logo: $viewModel.logo.value, singleImage: $viewModel.singleImage.value)
         
     }
 }

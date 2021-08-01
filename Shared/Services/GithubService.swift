@@ -40,17 +40,31 @@ struct PageMetadata: Codable {
     var singleImage: String?
     var endDate: Date?
 
-    func logoUrl(filename: String) -> URL? {
-        url(filename, "logo", logo)
+    func logoUrl(pagename: String) -> URL? {
+        url(pagename, "logo", logo)
     }
     
-    func singleImageUrl(filename: String) -> URL? {
-        url(filename, "singleImage", singleImage)
+    func logoPath(pagename: String) -> String? {
+        path(pagename, "logo", logo)
     }
     
-    private func url(_ pagename: String, _ filename: String, _ ext: String?) -> URL? {
+    func singleImageUrl(pagename: String) -> URL? {
+        url(pagename, "singleImage", singleImage)
+    }
+
+    func singleImagePath(pagename: String) -> String? {
+        path(pagename, "singleImage", singleImage)
+    }
+    
+    func url(_ pagename: String, _ filename: String, _ ext: String?) -> URL? {
+        //guard let type = type, let ext = ext else { return nil }
+        guard let path = path(pagename, filename, ext) else { return nil }
+        return GithubService.rawUrl(path)
+    }
+    
+    func path(_ pagename: String, _ filename: String, _ ext: String?) -> String? {
         guard let type = type, let ext = ext else { return nil }
-        return GithubService.rawUrl("Resources/img/\(type.rawValue)/\(pagename.withoutExt)/\(filename)\(ext)")
+        return "Resources/img/\(type.rawValue)/\(pagename.withoutExt)/\(filename)\(ext)"
     }
 }
 
@@ -113,7 +127,8 @@ protocol GithubServicing {
     func fetchList(of type: ContentType, completion: @escaping (Result<[ContentItem], Error>) -> Void)
     func fetchItem(item: ContentItem, completion: @escaping (Result<Page, Error>) -> Void)
     func putItem(request: PutItemRequest, path: String, completion: @escaping (Result<Void, Error>) -> Void)
-    func putItem(item: ContentItem, content: String, completion: @escaping (Result<Void, Error>) -> Void)
+    func putItem(item: ContentItem, content: Data, completion: @escaping (Result<Void, Error>) -> Void)
+    func deleteItem(request: DeleteItemRequest, path: String, completion: @escaping (Result<Void, Error>) -> Void)
 }
 
 struct ContentItem: Codable, Hashable, Identifiable {
@@ -131,18 +146,26 @@ struct PutItemResponse: Codable {
 
 struct PutItemRequest: Encodable {
     var message: String = "Update content"
-    let content: String
+    let content: Data
+    let sha: String?
+}
+
+struct DeleteItemRequest: Encodable {
+    var message: String = "Delete content"
     let sha: String?
 }
 
 extension PutItemRequest {
-    init(from item: ContentItem, content: String) {
+    init(from item: ContentItem, content: Data) {
         self.init(content: content, sha: item.sha)
     }
 }
 
 class GithubService: GithubServicing {
     static let apiBase = "https://api.github.com"
+    
+    static let apiContentsBase = apiBase + "/repos/" + repo + "/contents"
+    
     static let base = "https://github.com"
     
     private let headers = HTTPHeaders([ .accept("application/vnd.github.v3+json"), .authorization(Config.token) ])
@@ -162,8 +185,8 @@ class GithubService: GithubServicing {
     }()
 
     func fetchList(of type: ContentType, completion: @escaping (Result<[ContentItem], Error>) -> Void) {
-        AF.request("\(Self.apiBase)/repos/\(Self.repo)/contents/Content/\(type)", method: .get, headers: headers)
-            .responseDecodable(of: [ContentItem].self, decoder: decoder) { completion($0.result.mapError { $0 as Error }) }
+        AF.request("\(Self.apiContentsBase)/Content/\(type)", method: .get, headers: headers)
+            .responseDecodable(of: [ContentItem].self, decoder: decoder, completionHandler: makeCompletion(completion))
     }
 
     func fetchItem(item: ContentItem, completion: @escaping (Result<Page, Error>) -> Void) {
@@ -173,15 +196,29 @@ class GithubService: GithubServicing {
                     try Page(from: $0)
                 }.result)
             }
-    
     }
 
     func putItem(request: PutItemRequest, path: String, completion: @escaping (Result<Void, Error>) -> Void) {
-        AF.request("\(Self.apiBase)/repos/\(Self.repo)/contents/\(path)", method: .put, parameters: request, encoder: JSONParameterEncoder.default, headers: headers)
-            .responseDecodable(of: PutItemResponse.self, decoder: decoder) { completion($0.result.mapError { $0 as Error }.map {_ in ()}) }
+        AF.request("\(Self.apiContentsBase)/\(path)", method: .put, parameters: request, encoder: JSONParameterEncoder.default, headers: headers)
+            .responseDecodable(of: PutItemResponse.self, decoder: decoder, completionHandler: makeVoidCompletion(completion))
     }
 
-    func putItem(item: ContentItem, content: String, completion: @escaping (Result<Void, Error>) -> Void) {
+    func putItem(item: ContentItem, content: Data, completion: @escaping (Result<Void, Error>) -> Void) {
         putItem(request: .init(from: item, content: content), path: item.path, completion: completion)
+    }
+
+    func deleteItem(request: DeleteItemRequest, path: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        AF.request("\(Self.apiContentsBase)/\(path)", method: .delete, parameters: request, encoder: JSONParameterEncoder.default, headers: headers)
+            .responseDecodable(of: PutItemResponse.self, decoder: decoder, completionHandler: makeVoidCompletion(completion))
+    }
+
+    private func makeCompletion<T>(_ completion: @escaping (Result<T, Error>) -> Void) -> (DataResponse<T, AFError>) -> Void {
+        {
+            completion($0.result.mapError { $0 as Error })
+        }
+    }
+
+    private func makeVoidCompletion<T>(_ completion: @escaping (Result<Void, Error>) -> Void) -> (DataResponse<T, AFError>) -> Void {
+        makeCompletion { completion($0.map { _ in () }) }
     }
 }

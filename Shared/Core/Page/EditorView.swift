@@ -13,37 +13,46 @@ import HighlightedTextEditor
 
 struct EditorView: View {
     @Binding var text: String
-    @Binding var attachedImages: [String: Image]
+    @Binding var attachedImages: [String: ImageOrUrl]
     @State private var selection: NSRange = .init()
     
-    var images: [String] {
-        var images = [String]()
+    init(text: Binding<String>, attachedImages: Binding<[String: ImageOrUrl]>) {
+        self._text = text
+        self._attachedImages = attachedImages
+        self.attachedImages = images
+    }
+    
+    private var images: [String: ImageOrUrl] {
+        var images = [String: ImageOrUrl]()
         let _ = Ink.MarkdownParser(modifiers: [Ink.Modifier(target: .images) { html, markdown in
             let str = String(markdown[markdown.firstIndex(of: "(")! ... markdown.lastIndex(of: ")")!].dropFirst().dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !str.isEmpty else { return html }
-            images.append(str)
+            guard !str.isEmpty, let image = ImageOrUrl.remote(str) else { return html }
+            images[str] = image
             return html
         }]).html(from: text)
         return images
     }
 
     fileprivate func imagesStack() -> some View {
-        return ScrollView(.horizontal) {
+        ScrollView(.horizontal) {
             LazyHStack {
-                ForEach(images.indices, id: \.self) { index in
-                    let path = images[index]
-                    
+                ForEach(Array(attachedImages.enumerated()), id: \.0) { (index, entry) in
+                    let (path, image) = entry
+
                     ZStack(alignment: .topTrailing) {
-                        if let image = attachedImages[path] {
-                            ImageView(image: image).resizable().scaledToFit()
-                        } else if let url = URL(string: GithubService.repoUrl + "/raw/master/Resources" + path) {
+                        switch image {
+                        case let .remote(_, url):
                             KFImage(url).placeholder {
                                 ImagePickerButton(label: { Text("Add") }) { images in
                                     guard let image = images.first else { return }
-                                    attachedImages[path] = image
+                                    attachedImages[path] = .image(image)
                                 }.frame(width: 100, height: 100)
                             }.resizable().scaledToFit()
+
+                        case let .image(image):
+                            ImageView(image: image).resizable().scaledToFit()
                         }
+                        
                         Button(action: {
                             text = text.replacingOccurrences(of: path, with: "")
                         }) {
@@ -63,7 +72,7 @@ struct EditorView: View {
                     selection = range
                 }
                 .onTextChange { _ in
-                    attachedImages = attachedImages.filter { !text.contains($0.key) }
+                    attachedImages = attachedImages.merging(images) { $1 }.filter { !text.contains($0.key) }
                 }
         }
     }

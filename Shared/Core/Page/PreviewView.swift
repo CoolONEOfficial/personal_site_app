@@ -11,7 +11,7 @@ import Kingfisher
 
 struct PreviewView: View {
     let page: Page
-    @Binding var attachedImages: [String: Image]
+    @Binding var attachedImages: [String: ImageOrUrl]
     
     var body: some View {
         ScrollView(.vertical) {
@@ -34,10 +34,17 @@ extension PreviewView: ParmaRenderable {
     }
     
     private func image(_ path: String) -> AnyView {
-        if let image = attachedImages[path] {
+        
+        switch attachedImages[path] {
+        case let .remote(_, url):
+            return .init(KFImage(url).resizable().scaledToFit())
+            
+            
+        case let .image(image):
             return .init(ImageView(image: image).resizable().scaledToFit())
-        } else {
-            return .init(KFImage(URL(string: GithubService.repoUrl + "/raw/master/Resources" + path)!).resizable().scaledToFit())
+            
+        default:
+            return .init(Text("Wrong url??"))
         }
     }
 }

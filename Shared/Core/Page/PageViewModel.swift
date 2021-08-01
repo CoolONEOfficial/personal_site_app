@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CryptoKit
 
 enum Tab: Equatable {
     case editor
@@ -40,9 +41,9 @@ protocol PageViewModeling: ObservableObject {
     var state: PageViewState { get set }
     var tab: Tab { get set }
     var isNewPage: Bool { get }
-    var attachedImages: [String: Image] { get set }
-    var logo: ImageOrUrl? { get set }
-    var singleImage: ImageOrUrl? { get set }
+    var attachedImages: Snapshot<[String: ImageOrUrl]> { get set }
+    var logo: Snapshot<ImageOrUrl?> { get set }
+    var singleImage: Snapshot<ImageOrUrl?> { get set }
     func updateView()
     func apply(filename: String, dismissCompletion: @escaping () -> Void)
     func onAppear()
@@ -53,9 +54,9 @@ class PageViewModel: PageViewModeling {
 
     @Published var state: PageViewState = .loading
     @Published var tab: Tab = .editor
-    @Published var attachedImages = [String: Image]()
-    @Published var logo: ImageOrUrl?
-    @Published var singleImage: ImageOrUrl?
+    @Published var attachedImages = Snapshot([String: ImageOrUrl]())
+    @Published var logo: Snapshot<ImageOrUrl?> = .init(nil)
+    @Published var singleImage: Snapshot<ImageOrUrl?> = .init(nil)
     
     enum ItemOrType {
         case item(ContentItem)
@@ -77,24 +78,23 @@ class PageViewModel: PageViewModeling {
     func onAppear() {
         guard case let .item(item) = itemOrType else { return }
         githubService.fetchItem(item: item) { [self] result in
-//            guard let self = self else {
-//                debugPrint("WTH!?")
-//                return
-//            }
             switch result {
             case let .success(page):
                 self.state = .page(page)
                 
-                if let url = page.metadata.logoUrl(filename: item.name) {
-                    logo = .url(url)
+                if let url = page.metadata.logoUrl(pagename: item.name),
+                   let path = page.metadata.logoPath(pagename: item.name) {
+                    logo = .init(.remote(path, url))
                 } else {
-                    logo = nil
+                    logo = .init(nil)
                 }
-                
-                if let url = page.metadata.singleImageUrl(filename: item.name) {
-                    singleImage = .url(url)
+
+                if let url = page.metadata.singleImageUrl(pagename: item.name),
+                   let path = page.metadata.singleImagePath(pagename: item.name) {
+                    singleImage = .init(.remote(path, url))
                 } else {
-                    singleImage = nil
+                    singleImage = .init(nil)
+                
                 }
 
             case let .failure(error):
@@ -138,20 +138,52 @@ class PageViewModel: PageViewModeling {
 
     func apply(filename: String, dismissCompletion: @escaping () -> Void) {
         guard let page = state.page,
-              let content = page.string()?.data(using: .utf8)?.base64EncodedString() else { return }
+              let content = page.string()?.data(using: .utf8)?.base64EncodedData() else { return }
 
         defer { state = .loading }
         
+        let group = DispatchGroup()
+        
+        group.enter()
         switch itemOrType {
         case let .item(item):
-            githubService.putItem(item: item, content: content, completion: { self.putCompleted($0, dismissCompletion) })
+            githubService.putItem(item: item, content: content) { _ in group.leave() }
         case let .type(type):
-            githubService.putItem(request: .init(content: content, sha: nil), path: "\(type.rawValue)/\(filename)", completion: { self.putCompleted($0, dismissCompletion) })
+            githubService.putItem(request: .init(content: content, sha: nil), path: "\(type.rawValue)/\(filename)") { _ in group.leave() }
         }
+
+        putImage(page: page, image: singleImage, filename: "singleImage", pagename: filename, ext: page.metadata.singleImage, group: group)
+        putImage(page: page, image: logo, filename: "logo", pagename: filename, ext: page.metadata.logo, group: group)
     }
-    
-    func putCompleted(_ result: Result<Void, Error>, _ dismissCompletion: () -> Void) {
-        debugPrint("")
+
+    func putImage(page: Page, image: Snapshot<ImageOrUrl?>, filename: String, pagename: String, ext: String?, group: DispatchGroup) {
+        group.enter()
+        DispatchQueue.global(qos: .userInitiated).async { [self] in
+            defer { group.leave() }
+            
+            guard let url = page.metadata.url(pagename, filename, ext),
+                  let path = page.metadata.path(pagename, filename, ext) else { return }
+            var sha: String?
+            if let data = try? Data(contentsOf: url) {
+                sha = SHA256.hash(data: data).hexStr
+            } else {
+                sha = nil
+            }
+            
+            switch (image.original, image.value) {
+            case let (.none, .image(image)), let (.remote, .image(image)):
+                guard let imageData = image.pngData() else { return }
+
+                group.enter()
+                githubService.putItem(request: .init(content: imageData, sha: sha), path: path) { _ in group.leave() }
+
+            case let (.remote(path, _), .none):
+                group.enter()
+                githubService.deleteItem(request: .init(sha: sha), path: path) { _ in group.leave() }
+                
+            default: break
+            }
+        }
     }
 }
 
@@ -173,4 +205,13 @@ extension CareerMetadata {
 
 extension AchievementMetadata {
     static let new: Self = .init(type: .certificate)
+}
+
+extension Digest {
+    var bytes: [UInt8] { Array(makeIterator()) }
+    var data: Data { Data(bytes) }
+
+    var hexStr: String {
+        bytes.map { String(format: "%02X", $0) }.joined()
+    }
 }

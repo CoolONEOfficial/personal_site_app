@@ -47,8 +47,25 @@ struct ImagePickerButton<T: View>: View {
 }
 
 enum ImageOrUrl {
-    case url(URL)
+    case remote(_ path: String, _ url: URL)
     case image(Image)
+}
+
+extension ImageOrUrl {
+    static func remote(_ path: String) -> Self? {
+        guard let url = GithubService.rawUrl(path) else { return nil }
+        return .remote(path, url)
+    }
+}
+
+struct Snapshot<T> {
+    let original: T
+    var value: T
+    
+    init(_ val: T) {
+        original = val
+        value = val
+    }
 }
 
 struct ImagePickerView: View {
@@ -82,7 +99,7 @@ struct ImagePickerView: View {
         ZStack(alignment: .topTrailing) {
             
             switch entry {
-            case let .url(url):
+            case let .remote(_, url):
                 KFImage(url).resizable().scaledToFit().frame(height: 100)
 
             case let .image(imageVal):
