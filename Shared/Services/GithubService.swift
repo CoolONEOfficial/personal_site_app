@@ -168,7 +168,7 @@ class GithubService: GithubServicing {
     
     static let base = "https://github.com"
     
-    private let headers = HTTPHeaders([ .accept("application/vnd.github.v3+json"), .authorization(Config.token) ])
+    private let headers = HTTPHeaders([ .accept("application/vnd.github.v3+json"), .authorization("token " + Config.token) ])
     
     static let repo = "CoolONEOfficial/personal_site"
 

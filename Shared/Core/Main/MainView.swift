@@ -27,8 +27,7 @@ struct MainView<Model: MainViewModeling>: View {
     
     func list(_ items: [ContentType: [ContentItem]]) -> some View {
         List {
-            ForEach(Array(items.enumerated()), id: \.offset) { (_, entry) in
-                let (type, items) = (entry.0, entry.1)
+            ForEach(items.sorted { $0.key.rawValue < $1.key.rawValue }, id: \.key.rawValue) { (type, items) in
                 DisclosureGroup(
                     isExpanded: .init(
                         get: { type == isGroupOpened },
@@ -74,7 +73,7 @@ struct MainView<Model: MainViewModeling>: View {
                 ZStack(alignment: .center) {
                     Rectangle().fill(Color.gray.opacity(0.3))
                     ProgressView("Loading...")
-                }
+                }.ignoresSafeArea(.all, edges: .all)
             }
         }
     }
@@ -88,6 +87,7 @@ struct MainView<Model: MainViewModeling>: View {
     var body: some View {
         NavigationView {
             entriesSection
+                .navigationBarHidden(viewModel.isLoading)
                 .navigationTitle("Sections")
                 .listStyle(SidebarListStyle())
         }.onFirstAppear {
