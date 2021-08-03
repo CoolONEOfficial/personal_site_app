@@ -15,7 +15,7 @@ extension String {
 
 struct MetadataView: View {
     @Binding var metadata: PageMetadata
-    var filename: Binding<String>
+    @Binding var pagename: String
     @State private var endDate: Bool = false
     @Binding var logo: ImageOrUrl? {
         didSet {
@@ -34,8 +34,8 @@ struct MetadataView: View {
         }
     }
 
-    init(metadata: Binding<PageMetadata>, filename: Binding<String>, logo: Binding<ImageOrUrl?>, singleImage: Binding<ImageOrUrl?>) {
-        self.filename = filename
+    init(metadata: Binding<PageMetadata>, pagename: Binding<String>, logo: Binding<ImageOrUrl?>, singleImage: Binding<ImageOrUrl?>) {
+        self._pagename = pagename
         self._metadata = metadata
         self._logo = logo
         self._singleImage = singleImage
@@ -45,17 +45,18 @@ struct MetadataView: View {
     var body: some View {
         Form {
             Section(header: Text("General")) {
-                if let filename = filename {
-                    TextField("Filename", text: filename)
+                if let pagename = pagename {
+                    TextField("Filename", text: .init(get: { pagename }, set: { self.pagename = $0.replacingOccurrences(of: " ", with: "-") }))
+                        .autocapitalization(.none)
                 }
-                VStack {
+                VStack(alignment: .leading) {
                     Text("Description")
                     TextEditor(text: $metadata.description)
                 }
                 
                 DatePicker("Start date", selection: $metadata.date)
-                                .datePickerStyle(GraphicalDatePickerStyle())
-                                .frame(maxHeight: 400)
+                    .datePickerStyle(GraphicalDatePickerStyle())
+                    .frame(maxHeight: 400)
                 Toggle("End date enabled", isOn: $endDate)
                 if endDate {
                     DatePicker("End date", selection: .init(get: { metadata.endDate ?? Date() }, set: { metadata.endDate = $0 }))

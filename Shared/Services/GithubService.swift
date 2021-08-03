@@ -48,6 +48,11 @@ struct PageMetadata: Codable {
         path(pagename, "logo", logo)
     }
     
+    func markdownPath(pagename: String) -> String? {
+        guard let type = type else { return nil }
+        return "Content/\(type.rawValue)/\(pagename).md"
+    }
+    
     func singleImageUrl(pagename: String) -> URL? {
         url(pagename, "singleImage", singleImage)
     }
@@ -56,15 +61,19 @@ struct PageMetadata: Codable {
         path(pagename, "singleImage", singleImage)
     }
     
+    func resourcesDirectoryPath(pagename: String) -> String? {
+        path(pagename, nil, nil)
+    }
+
     func url(_ pagename: String, _ filename: String, _ ext: String?) -> URL? {
-        //guard let type = type, let ext = ext else { return nil }
         guard let path = path(pagename, filename, ext) else { return nil }
         return GithubService.rawUrl(path)
     }
-    
-    func path(_ pagename: String, _ filename: String, _ ext: String?) -> String? {
-        guard let type = type, let ext = ext else { return nil }
-        return "Resources/img/\(type.rawValue)/\(pagename.withoutExt)/\(filename)\(ext)"
+
+    func path(_ pagename: String, _ filename: String?, _ ext: String?) -> String? {
+        guard let type = type else { return nil }
+        if filename != nil, ext == nil { return nil }
+        return ["Resources", "img", type.rawValue, pagename.withoutExt, filename != nil ? "\(filename ?? "")\(ext ?? "")" : nil].compactMap { $0 }.joined(separator: "/")
     }
 }
 
@@ -124,15 +133,24 @@ extension Dictionary where Key == String {
 }
 
 protocol GithubServicing {
-    func fetchList(of type: ContentType, completion: @escaping (Result<[ContentItem], Error>) -> Void)
+    func fetchContentsList(of type: ContentType, pagename: String?, completion: @escaping (Result<[ContentItem], Error>) -> Void)
     func fetchItem(item: ContentItem, completion: @escaping (Result<Page, Error>) -> Void)
     func putItem(request: PutItemRequest, path: String, completion: @escaping (Result<Void, Error>) -> Void)
     func putItem(item: ContentItem, content: Data, completion: @escaping (Result<Void, Error>) -> Void)
     func deleteItem(request: DeleteItemRequest, path: String, completion: @escaping (Result<Void, Error>) -> Void)
+    func deleteDirectory(message: String, path: String, completion: @escaping (Result<Void, Error>) -> Void)
 }
 
 struct ContentItem: Codable, Hashable, Identifiable {
+    enum ItemType: String, Codable {
+        case dir
+        case file
+        case symlink
+        case submodule
+    }
+    
     var id: String { path }
+    let type: ItemType
     let name: String
     let path: String
     let sha: String?
@@ -175,7 +193,7 @@ class GithubService: GithubServicing {
     static let repoUrl = base + "/" + repo
     
     static func rawUrl(_ path: String) -> URL? {
-        .init(string: "\(repoUrl)/raw/master/\(path)")
+        .init(string: "\(repoUrl)/raw/master/\(path.trimmingCharacters(in: .init(arrayLiteral: .init(unicodeScalarLiteral: "/"))))")
     }
     
     private lazy var decoder: JSONDecoder = {
@@ -184,8 +202,23 @@ class GithubService: GithubServicing {
         return decoder
     }()
 
-    func fetchList(of type: ContentType, completion: @escaping (Result<[ContentItem], Error>) -> Void) {
-        AF.request("\(Self.apiContentsBase)/Content/\(type)", method: .get, headers: headers)
+    
+    // MARK: Fetch
+    
+    func fetchContentsList(of type: ContentType, pagename: String? = nil, completion: @escaping (Result<[ContentItem], Error>) -> Void) {
+        fetchList(of: type, folder: "Content", pagename: pagename, completion: completion)
+    }
+
+    func fetchResourcesList(of type: ContentType, pagename: String? = nil, completion: @escaping (Result<[ContentItem], Error>) -> Void) {
+        fetchList(of: type, folder: "Resources/img", pagename: pagename, completion: completion)
+    }
+
+    func fetchList(of type: ContentType, folder: String, pagename: String? = nil, completion: @escaping (Result<[ContentItem], Error>) -> Void) {
+        fetchList(path: [Self.apiContentsBase, folder, type.rawValue, pagename].compactMap { $0 }.joined(separator: "/"), completion: completion)
+    }
+    
+    func fetchList(path: String, completion: @escaping (Result<[ContentItem], Error>) -> Void) {
+        AF.request(path, method: .get, headers: headers)
             .responseDecodable(of: [ContentItem].self, decoder: decoder, completionHandler: makeCompletion(completion))
     }
 
@@ -198,6 +231,8 @@ class GithubService: GithubServicing {
             }
     }
 
+    // MARK: Put
+    
     func putItem(request: PutItemRequest, path: String, completion: @escaping (Result<Void, Error>) -> Void) {
         AF.request("\(Self.apiContentsBase)/\(path)", method: .put, parameters: request, encoder: JSONParameterEncoder.default, headers: headers)
             .responseDecodable(of: PutItemResponse.self, decoder: decoder, completionHandler: makeVoidCompletion(completion))
@@ -207,18 +242,122 @@ class GithubService: GithubServicing {
         putItem(request: .init(from: item, content: content), path: item.path, completion: completion)
     }
 
+    // MARK: Delete
+    
     func deleteItem(request: DeleteItemRequest, path: String, completion: @escaping (Result<Void, Error>) -> Void) {
         AF.request("\(Self.apiContentsBase)/\(path)", method: .delete, parameters: request, encoder: JSONParameterEncoder.default, headers: headers)
             .responseDecodable(of: PutItemResponse.self, decoder: decoder, completionHandler: makeVoidCompletion(completion))
     }
+    
+    func deleteItem(item: ContentItem, completion: @escaping (Result<Void, Error>) -> Void) {
+        deleteItem(request: .init(sha: item.sha), path: item.path, completion: completion)
+    }
+    
+    func deleteItem(message: String, path: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        fetchList(path: path) { result in
+            switch result {
+            case let .success(items):
+                if let item = items.first {
+                    self.deleteItem(item: item, completion: completion)
+                }
+                completion(.success(()))
+                
+            case let .failure(err):
+                completion(.failure(err))
+            }
+        }
+        
+    }
+    
+    func deleteDirectory(message: String, path: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        fetchList(path: path) { result in
+            switch result {
+            case let .success(items):
+                let group = DispatchGroup()
+                
+                var error: Error?
+                
+                for item in items {
+                    
+                    switch item.type {
+                    case .dir:
+                        group.enter()
+                        self.deleteDirectory(message: message, path: item.path) { _ in group.leave() }
+                    
+                    case .file:
+                        group.enter()
+                        self.deleteItem(item: item) { result in
+                            if case let .failure(err) = result {
+                                error = err
+                            }
+                            group.leave()
+                        }
+                        
+                    default:
+                        break
+                    }
+                }
 
-    private func makeCompletion<T>(_ completion: @escaping (Result<T, Error>) -> Void) -> (DataResponse<T, AFError>) -> Void {
+                group.notify(queue: .main) {
+                    if let error = error {
+                        completion(.failure(error))
+                    } else {
+                        completion(.success(()))
+                    }
+                }
+                
+            case let .failure(err):
+                completion(.failure(err))
+            }
+        }
+    }
+    
+    func deletePage(message: String, page: Page, pagename: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        let group = DispatchGroup()
+        
+        var error: Error?
+        
+        let completion = { (result: Result<Void, Error>) in
+            if case let .failure(err) = result {
+                error = err
+            }
+            group.leave()
+        }
+        
+        if let resourcesPath = page.metadata.resourcesDirectoryPath(pagename: pagename) {
+            group.enter()
+            deleteDirectory(message: message, path: resourcesPath, completion: completion)
+        } else {
+            // TODO: replace resourcesDirectoryPath optional to exceptions
+        }
+        
+        if let markdownPath = page.metadata.markdownPath(pagename: pagename) {
+            group.enter()
+            deleteItem(message: message, path: markdownPath, completion: completion)
+        } else {
+            // TODO: replace markdownPath optional to exceptions
+        }
+        
+        group.notify(queue: .main) {
+            if let error = error {
+                completion(.failure(error))
+            } else {
+                completion(.success(()))
+            }
+        }
+    }
+}
+
+// MARK: Completion helpers
+
+private extension GithubService {
+    func makeCompletion<T>(_ completion: @escaping (Result<T, Error>) -> Void) -> (DataResponse<T, AFError>) -> Void {
         {
             completion($0.result.mapError { $0 as Error })
         }
     }
 
-    private func makeVoidCompletion<T>(_ completion: @escaping (Result<Void, Error>) -> Void) -> (DataResponse<T, AFError>) -> Void {
+    func makeVoidCompletion<T>(_ completion: @escaping (Result<Void, Error>) -> Void) -> (DataResponse<T, AFError>) -> Void {
         makeCompletion { completion($0.map { _ in () }) }
     }
 }

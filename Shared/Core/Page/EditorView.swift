@@ -19,14 +19,13 @@ struct EditorView: View {
     init(text: Binding<String>, attachedImages: Binding<[String: ImageOrUrl]>) {
         self._text = text
         self._attachedImages = attachedImages
-        self.attachedImages = images
     }
     
     private var images: [String: ImageOrUrl] {
         var images = [String: ImageOrUrl]()
         let _ = Ink.MarkdownParser(modifiers: [Ink.Modifier(target: .images) { html, markdown in
             let str = String(markdown[markdown.firstIndex(of: "(")! ... markdown.lastIndex(of: ")")!].dropFirst().dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !str.isEmpty, let image = ImageOrUrl.remote(str) else { return html }
+            guard !str.isEmpty, let image = ImageOrUrl.remote("Resources/" + str) else { return html }
             images[str] = image
             return html
         }]).html(from: text)
@@ -34,11 +33,9 @@ struct EditorView: View {
     }
 
     fileprivate func imagesStack() -> some View {
-        ScrollView(.horizontal) {
+        ScrollView(.horizontal, showsIndicators: false) {
             LazyHStack {
-                ForEach(Array(attachedImages.enumerated()), id: \.0) { (index, entry) in
-                    let (path, image) = entry
-
+                ForEach(attachedImages.sorted { $0.key < $1.key }, id: \.key) { (path, image) in
                     ZStack(alignment: .topTrailing) {
                         switch image {
                         case let .remote(_, url):
@@ -52,7 +49,7 @@ struct EditorView: View {
                         case let .image(image):
                             ImageView(image: image).resizable().scaledToFit()
                         }
-                        
+
                         Button(action: {
                             text = text.replacingOccurrences(of: path, with: "")
                         }) {
@@ -72,8 +69,11 @@ struct EditorView: View {
                     selection = range
                 }
                 .onTextChange { _ in
-                    attachedImages = attachedImages.merging(images) { $1 }.filter { !text.contains($0.key) }
+                    attachedImages = attachedImages.filter { $0.value.isLocal }.merging(images) { $1 }.filter { text.contains("(\($0.key))") }
                 }
+        }.onAppear {
+            guard attachedImages.isEmpty, !text.isEmpty else { return }
+            self.attachedImages = images
         }
     }
 }

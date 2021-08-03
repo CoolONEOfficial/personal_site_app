@@ -8,22 +8,44 @@
 import Foundation
 
 enum MainViewState {
-    case items([ContentType: [ContentItem]])
+    typealias Items = [ContentType: [ContentItem]]
+    
+    case items(_ items: Items)
     case error(Error)
-    case loading
+    
+    var items: Items? {
+        get {
+            if case let .items(items) = self { return items }
+            return nil
+        }
+        set {
+            guard let newValue = newValue else { return }
+            self = .items(newValue)
+        }
+    }
+    
+    mutating func updateItems(completion: (inout Items) -> Void) {
+        guard var items = self.items else { return }
+        completion(&items)
+        self.items = items
+    }
 }
 
 protocol MainViewModeling: ObservableObject {
     var state: MainViewState { get set }
+    var isLoading: Bool { get set }
     func onAppear()
+    func onDelete(type: ContentType, at offsets: IndexSet)
 }
 
 class MainViewModel: MainViewModeling {
     private let githubService: GithubServicing = GithubService()
 
-    @Published var state: MainViewState = .loading
-    
+    @Published var state: MainViewState = .items(.init())
+    @Published var isLoading = false
+
     func onAppear() {
+        isLoading = true
         let group = DispatchGroup()
         
         var errors = [Error]()
@@ -32,7 +54,7 @@ class MainViewModel: MainViewModeling {
         
         for type in ContentType.allCases {
             group.enter()
-            githubService.fetchList(of: type) { result in
+            githubService.fetchContentsList(of: type, pagename: nil) { result in
                 defer { group.leave() }
                 switch result {
                 case let .success(_items):
@@ -51,6 +73,21 @@ class MainViewModel: MainViewModeling {
             } else {
                 self.state = .items(items)
             }
+            self.isLoading = false
         }
+    }
+    
+    func onDelete(type: ContentType, at offsets: IndexSet) {
+        isLoading = true
+        
+        let group = DispatchGroup()
+        
+        for item in offsets.compactMap({ state.items?[type]?[$0] }) {
+            group.enter()
+            
+            
+        }
+        
+        group.notify(queue: .main) { [self] in isLoading = false }
     }
 }

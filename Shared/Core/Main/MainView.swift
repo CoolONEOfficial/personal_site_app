@@ -8,60 +8,49 @@
 import SwiftUI
 import Parma
 
-enum ListEntry: Equatable, Hashable, Identifiable {
-    case section(ContentType, [Self])
-    case item(ContentItem, ContentType)
-    case new(ContentType)
-
-    var id: String {
-        switch self {
-        case let .item(item, _):
-            return item.id
-        
-        case let .section(type, _):
-            return type.id
-
-        case let .new(type):
-            return type.id
-        }
-    }
-    
-    var children: [Self]? {
-        guard case let .section(type, children) = self else { return nil }
-        return children + [ .new(type) ]
-    }
-}
-
 struct MainView<Model: MainViewModeling>: View {
     @ObservedObject var viewModel: Model
-    @State var isPageActive = [String: [String: Bool]]()
-
-    func data(_ items: [ContentType: [ContentItem]]) -> [ListEntry] {
-        items.enumerated().map(\.element).sorted { $0.key.rawValue < $1.key.rawValue }.map { entry in .section(entry.key, entry.value.map { .item($0, entry.key) }) }
-    }
+    @State var isPageActive = [ContentType: [String: Bool]]()
     
-    func isActive(_ k1: String, _ k2: String) -> Binding<Bool> {
+    @State private var isGroupOpened: ContentType?
+    
+    func isActive(_ k1: ContentType, _ k2: String) -> Binding<Bool> {
         Binding(get: { isPageActive[k1, default: [:]][k2, default: false] }, set: { isPageActive[k1, default: [:]][k2] = $0 })
     }
     
+    func delete(type: ContentType, at offsets: IndexSet) {
+        viewModel.state.updateItems { items in
+            items[type]?.remove(atOffsets: offsets)
+        }
+        viewModel.onDelete(type: type, at: offsets)
+    }
+    
     func list(_ items: [ContentType: [ContentItem]]) -> some View {
-        let data = data(items)
-        return List(data, id: \.self, children: \.children) { entry in
-            switch entry {
-            case let .section(type, _):
-                Text(type.name)
-            case let .item(item, type):
-                let isActive = isActive(type.rawValue, item.name)
-                NavigationLink(item.name, destination: PageView(viewModel: PageViewModel(item: item), filename: item.name, isPageActive: isActive), isActive: isActive)
-            case let .new(type):
-                let isActive = isActive(type.rawValue, "new")
-                NavigationLink("Create new", destination: PageView(viewModel: PageViewModel(type: type), filename: "", isPageActive: isActive), isActive: isActive)
+        List {
+            ForEach(Array(items.enumerated()), id: \.offset) { (_, entry) in
+                let (type, items) = (entry.0, entry.1)
+                DisclosureGroup(
+                    isExpanded: .init(
+                        get: { type == isGroupOpened },
+                        set: { isGroupOpened = $0 ? type : nil }
+                    )
+                ) {
+                    ForEach(items) { item in
+                        let isActive = self.isActive(type, item.name)
+                        NavigationLink(item.name, destination: PageView(viewModel: PageViewModel(item: item, pagename: item.name.withoutExt), isPageActive: isActive), isActive: isActive)
+                    }
+                    .onDelete { delete(type: type, at: $0) }
+
+                    let isActive = isActive(type, "new")
+                    NavigationLink("Create new", destination: PageView(viewModel: PageViewModel(type: type), isPageActive: isActive), isActive: isActive)
+                } label: {
+                    Text(type.name)
+                }
             }
         }
         .toolbar {
             #if os(macOS)
             ToolbarItem(placement: .navigation) {
-                
                 Button(action: toggleSidebar) {
                     ImageView(systemName: "sidebar.left")
                 }
@@ -72,15 +61,21 @@ struct MainView<Model: MainViewModeling>: View {
 
     @ViewBuilder
     var entriesSection: some View {
-        switch viewModel.state {
-        case .loading:
-            ProgressView("Loading...")
+        ZStack {
+            switch viewModel.state {
+            case let .error(error):
+                ErrorView(error: error)
 
-        case let .error(error):
-            ErrorView(error: error)
+            case let .items(items):
+                list(items)
+            }
 
-        case let .items(items):
-            list(items)
+            if viewModel.isLoading {
+                ZStack(alignment: .center) {
+                    Rectangle().fill(Color.gray.opacity(0.3))
+                    ProgressView("Loading...")
+                }
+            }
         }
     }
     

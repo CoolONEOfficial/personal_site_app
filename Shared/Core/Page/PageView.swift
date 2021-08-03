@@ -11,7 +11,6 @@ import Parma
 struct PageView<Model: PageViewModeling>: View {
     @ObservedObject var viewModel: Model
     @State var finishAlert: Bool = false
-    @State var filename: String
     @Binding var isPageActive: Bool
     
     var body: some View {
@@ -59,6 +58,7 @@ struct PageView<Model: PageViewModeling>: View {
                             }) {
                                 ImageView(systemName: "checkmark").imageScale(.large)
                             }
+                            .disabled(!viewModel.applyEnabled)
                         }
                     }
             }
@@ -68,14 +68,14 @@ struct PageView<Model: PageViewModeling>: View {
                 return Alert(
                     title: Text("Are you sure you want to create page?"),
                     message: Text(""),
-                    primaryButton: .default(Text("Yes"), action: { viewModel.apply(filename: filename, dismissCompletion: dismiss) }),
+                    primaryButton: .default(Text("Yes"), action: { viewModel.apply(dismissCompletion: dismiss) }),
                     secondaryButton: .cancel()
                 )
             } else {
                 return Alert(
                     title: Text("Are you sure you want to apply changes?"),
                     message: Text(""),
-                    primaryButton: .default(Text("Yes"), action: { viewModel.apply(filename: filename, dismissCompletion: dismiss) }),
+                    primaryButton: .default(Text("Yes"), action: { viewModel.apply(dismissCompletion: dismiss) }),
                     secondaryButton: .cancel()
                 )
             }
@@ -122,7 +122,7 @@ struct PageView<Model: PageViewModeling>: View {
         MetadataView(metadata: .init(get: { page.metadata }, set: { meta in
             page.metadata = meta
             viewModel.updateView()
-        }), filename: $filename, logo: $viewModel.logo.value, singleImage: $viewModel.singleImage.value)
+        }), pagename: $viewModel.pagename, logo: $viewModel.logo.value, singleImage: $viewModel.singleImage.value)
         
     }
 }

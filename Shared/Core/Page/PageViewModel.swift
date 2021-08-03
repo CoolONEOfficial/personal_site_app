@@ -40,12 +40,14 @@ enum PageViewState {
 protocol PageViewModeling: ObservableObject {
     var state: PageViewState { get set }
     var tab: Tab { get set }
+    var pagename: String { get set }
     var isNewPage: Bool { get }
     var attachedImages: Snapshot<[String: ImageOrUrl]> { get set }
     var logo: Snapshot<ImageOrUrl?> { get set }
     var singleImage: Snapshot<ImageOrUrl?> { get set }
     func updateView()
-    func apply(filename: String, dismissCompletion: @escaping () -> Void)
+    var applyEnabled: Bool { get }
+    func apply(dismissCompletion: @escaping () -> Void)
     func onAppear()
 }
 
@@ -57,6 +59,7 @@ class PageViewModel: PageViewModeling {
     @Published var attachedImages = Snapshot([String: ImageOrUrl]())
     @Published var logo: Snapshot<ImageOrUrl?> = .init(nil)
     @Published var singleImage: Snapshot<ImageOrUrl?> = .init(nil)
+    @Published var pagename: String
     
     enum ItemOrType {
         case item(ContentItem)
@@ -71,8 +74,9 @@ class PageViewModel: PageViewModeling {
         return false
     }
     
-    init(item: ContentItem) {
+    init(item: ContentItem, pagename: String) {
         self.itemOrType = .item(item)
+        self.pagename = pagename
     }
 
     func onAppear() {
@@ -130,13 +134,18 @@ class PageViewModel: PageViewModeling {
         
         state = .page(page)
         itemOrType = .type(type)
+        pagename = ""
     }
     
     func updateView() {
         self.objectWillChange.send()
     }
+    
+    var applyEnabled: Bool {
+        !pagename.isEmpty
+    }
 
-    func apply(filename: String, dismissCompletion: @escaping () -> Void) {
+    func apply(dismissCompletion: @escaping () -> Void) {
         guard let page = state.page,
               let content = page.string()?.data(using: .utf8)?.base64EncodedData() else { return }
 
@@ -149,14 +158,23 @@ class PageViewModel: PageViewModeling {
         case let .item(item):
             githubService.putItem(item: item, content: content) { _ in group.leave() }
         case let .type(type):
-            githubService.putItem(request: .init(content: content, sha: nil), path: "\(type.rawValue)/\(filename)") { _ in group.leave() }
+            githubService.putItem(request: .init(content: content, sha: nil), path: "\(type.rawValue)/\(pagename)") { _ in group.leave() }
         }
 
-        putImage(page: page, image: singleImage, filename: "singleImage", pagename: filename, ext: page.metadata.singleImage, group: group)
-        putImage(page: page, image: logo, filename: "logo", pagename: filename, ext: page.metadata.logo, group: group)
+        putImage(page: page, image: singleImage, filename: "singleImage", ext: page.metadata.singleImage, group: group)
+        putImage(page: page, image: logo, filename: "logo", ext: page.metadata.logo, group: group)
+        
+        for (path, newImage) in attachedImages.value.minus(dict: attachedImages.original) {
+            let oldImage = attachedImages.original[path]
+            
+            let imageName = String(path.split(separator: "/").last ?? .init(path)).withoutExt
+            putImage(page: page, image: .init(original: oldImage, value: newImage), filename: imageName, ext: ".png", group: group)
+        }
+        
+        group.notify(queue: .main, execute: dismissCompletion)
     }
 
-    func putImage(page: Page, image: Snapshot<ImageOrUrl?>, filename: String, pagename: String, ext: String?, group: DispatchGroup) {
+    func putImage(page: Page, image: Snapshot<ImageOrUrl?>, filename: String, ext: String?, group: DispatchGroup) {
         group.enter()
         DispatchQueue.global(qos: .userInitiated).async { [self] in
             defer { group.leave() }
@@ -213,5 +231,16 @@ extension Digest {
 
     var hexStr: String {
         bytes.map { String(format: "%02X", $0) }.joined()
+    }
+}
+
+extension Dictionary where Key: Comparable, Value: Equatable {
+    func minus(dict: [Key:Value]) -> [Key:Value] {
+        let entriesInSelfAndNotInDict = filter { dict[$0.0] != self[$0.0] }
+        return entriesInSelfAndNotInDict.reduce([Key:Value]()) { (res, entry) -> [Key:Value] in
+            var res = res
+            res[entry.0] = entry.1
+            return res
+        }
     }
 }

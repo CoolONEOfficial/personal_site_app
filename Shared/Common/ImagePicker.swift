@@ -46,9 +46,16 @@ struct ImagePickerButton<T: View>: View {
     }
 }
 
-enum ImageOrUrl {
+enum ImageOrUrl: Equatable {
     case remote(_ path: String, _ url: URL)
     case image(Image)
+
+    var isLocal: Bool {
+        if case .image = self {
+            return true
+        }
+        return false
+    }
 }
 
 extension ImageOrUrl {
@@ -62,6 +69,12 @@ struct Snapshot<T> {
     let original: T
     var value: T
     
+    func map<T2>(_ map: (T) -> T2) -> Snapshot<T2> {
+        .init(original: map(original), value: map(value))
+    }
+}
+
+extension Snapshot {
     init(_ val: T) {
         original = val
         value = val
