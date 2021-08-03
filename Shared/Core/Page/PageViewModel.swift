@@ -147,7 +147,7 @@ class PageViewModel: PageViewModeling {
 
     func apply(dismissCompletion: @escaping () -> Void) {
         guard let page = state.page,
-              let content = page.string()?.data(using: .utf8)?.base64EncodedData() else { return }
+              let content = page.string()?.data(using: .utf8) else { return }
 
         defer { state = .loading }
         
