@@ -17,7 +17,7 @@ struct MetadataView: View {
     @Binding var metadata: PageMetadata
     @Binding var pagename: String
     @State private var endDate: Bool = false
-    @Binding var logo: ImageOrUrl? {
+    @Binding var logo: LocalRemoteImage? {
         didSet {
             let newVal = logo != nil ? ".png" : ""
             if metadata.logo != newVal {
@@ -25,7 +25,7 @@ struct MetadataView: View {
             }
         }
     }
-    @Binding var singleImage: ImageOrUrl? {
+    @Binding var singleImage: LocalRemoteImage? {
         didSet {
             let newVal = singleImage != nil ? ".png" : ""
             if metadata.singleImage != newVal {
@@ -34,7 +34,7 @@ struct MetadataView: View {
         }
     }
 
-    init(metadata: Binding<PageMetadata>, pagename: Binding<String>, logo: Binding<ImageOrUrl?>, singleImage: Binding<ImageOrUrl?>) {
+    init(metadata: Binding<PageMetadata>, pagename: Binding<String>, logo: Binding<LocalRemoteImage?>, singleImage: Binding<LocalRemoteImage?>) {
         self._pagename = pagename
         self._metadata = metadata
         self._logo = logo
@@ -46,8 +46,7 @@ struct MetadataView: View {
         Form {
             Section(header: Text("General")) {
                 if let pagename = pagename {
-                    TextField("Filename", text: .init(get: { pagename }, set: { self.pagename = $0.replacingOccurrences(of: " ", with: "-") }))
-                        .autocapitalization(.none)
+                    TextField("Filename", text: .init(get: { pagename }, set: { self.pagename = $0.replacingOccurrences(of: " ", with: "-").lowercased() }))
                 }
                 VStack(alignment: .leading) {
                     Text("Description")

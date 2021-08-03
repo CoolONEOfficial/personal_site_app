@@ -42,9 +42,9 @@ protocol PageViewModeling: ObservableObject {
     var tab: Tab { get set }
     var pagename: String { get set }
     var isNewPage: Bool { get }
-    var attachedImages: Snapshot<[String: ImageOrUrl]> { get set }
-    var logo: Snapshot<ImageOrUrl?> { get set }
-    var singleImage: Snapshot<ImageOrUrl?> { get set }
+    var attachedImages: Snapshot<[String: LocalRemoteImage]> { get set }
+    var logo: Snapshot<LocalRemoteImage?> { get set }
+    var singleImage: Snapshot<LocalRemoteImage?> { get set }
     func updateView()
     var applyEnabled: Bool { get }
     func apply(dismissCompletion: @escaping () -> Void)
@@ -56,9 +56,9 @@ class PageViewModel: PageViewModeling {
 
     @Published var state: PageViewState = .loading
     @Published var tab: Tab = .editor
-    @Published var attachedImages = Snapshot([String: ImageOrUrl]())
-    @Published var logo: Snapshot<ImageOrUrl?> = .init(nil)
-    @Published var singleImage: Snapshot<ImageOrUrl?> = .init(nil)
+    @Published var attachedImages = Snapshot([String: LocalRemoteImage]())
+    @Published var logo: Snapshot<LocalRemoteImage?> = .init(nil)
+    @Published var singleImage: Snapshot<LocalRemoteImage?> = .init(nil)
     @Published var pagename: String
     
     enum ItemOrType {
@@ -81,7 +81,7 @@ class PageViewModel: PageViewModeling {
 
     func onAppear() {
         guard case let .item(item) = itemOrType else { return }
-        githubService.fetchItem(item: item) { [self] result in
+        githubService.fetchPage(item: item) { [self] result in
             switch result {
             case let .success(page):
                 self.state = .page(page)
@@ -156,9 +156,9 @@ class PageViewModel: PageViewModeling {
         group.enter()
         switch itemOrType {
         case let .item(item):
-            githubService.putItem(item: item, content: content) { _ in group.leave() }
+            githubService.overwriteItem(item: item, content: content) { _ in group.leave() }
         case let .type(type):
-            githubService.putItem(request: .init(content: content, sha: nil), path: "\(type.rawValue)/\(pagename)") { _ in group.leave() }
+            githubService.putItem(path: type.markdownPath(pagename: pagename), content: content) { _ in group.leave() }
         }
 
         putImage(page: page, image: singleImage, filename: "singleImage", ext: page.metadata.singleImage, group: group)
@@ -174,30 +174,25 @@ class PageViewModel: PageViewModeling {
         group.notify(queue: .main, execute: dismissCompletion)
     }
 
-    func putImage(page: Page, image: Snapshot<ImageOrUrl?>, filename: String, ext: String?, group: DispatchGroup) {
+    func putImage(page: Page, image: Snapshot<LocalRemoteImage?>, filename: String, ext: String?, group: DispatchGroup) {
+        guard let path = page.metadata.type?.path(pagename, filename, ext) else { return }
+        
         group.enter()
-        DispatchQueue.global(qos: .userInitiated).async { [self] in
+        
+        githubService.fetchItem(path: path) { [self] result in
             defer { group.leave() }
-            
-            guard let url = page.metadata.url(pagename, filename, ext),
-                  let path = page.metadata.path(pagename, filename, ext) else { return }
-            var sha: String?
-            if let data = try? Data(contentsOf: url) {
-                sha = SHA256.hash(data: data).hexStr
-            } else {
-                sha = nil
-            }
-            
+            guard let item = try? result.get() else { return }
+
             switch (image.original, image.value) {
-            case let (.none, .image(image)), let (.remote, .image(image)):
+            case let (.none, .local(image)), let (.remote, .local(image)):
                 guard let imageData = image.pngData() else { return }
 
                 group.enter()
-                githubService.putItem(request: .init(content: imageData, sha: sha), path: path) { _ in group.leave() }
+                githubService.overwriteItem(item: item, content: imageData) { _ in group.leave() }
 
-            case let (.remote(path, _), .none):
+            case (.remote, .none):
                 group.enter()
-                githubService.deleteItem(request: .init(sha: sha), path: path) { _ in group.leave() }
+                githubService.deleteItem(item: item) { _ in group.leave() }
                 
             default: break
             }

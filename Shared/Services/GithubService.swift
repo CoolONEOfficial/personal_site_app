@@ -39,42 +39,23 @@ struct PageMetadata: Codable {
     var logo: String?
     var singleImage: String?
     var endDate: Date?
-
+    
     func logoUrl(pagename: String) -> URL? {
-        url(pagename, "logo", logo)
+        type?.url(pagename, "logo", logo)
     }
     
     func logoPath(pagename: String) -> String? {
-        path(pagename, "logo", logo)
-    }
-    
-    func markdownPath(pagename: String) -> String? {
-        guard let type = type else { return nil }
-        return "Content/\(type.rawValue)/\(pagename).md"
+        type?.path(pagename, "logo", logo)
     }
     
     func singleImageUrl(pagename: String) -> URL? {
-        url(pagename, "singleImage", singleImage)
+        type?.url(pagename, "singleImage", singleImage)
     }
 
     func singleImagePath(pagename: String) -> String? {
-        path(pagename, "singleImage", singleImage)
+        type?.path(pagename, "singleImage", singleImage)
     }
     
-    func resourcesDirectoryPath(pagename: String) -> String? {
-        path(pagename, nil, nil)
-    }
-
-    func url(_ pagename: String, _ filename: String, _ ext: String?) -> URL? {
-        guard let path = path(pagename, filename, ext) else { return nil }
-        return GithubService.rawUrl(path)
-    }
-
-    func path(_ pagename: String, _ filename: String?, _ ext: String?) -> String? {
-        guard let type = type else { return nil }
-        if filename != nil, ext == nil { return nil }
-        return ["Resources", "img", type.rawValue, pagename.withoutExt, filename != nil ? "\(filename ?? "")\(ext ?? "")" : nil].compactMap { $0 }.joined(separator: "/")
-    }
 }
 
 extension DateFormatter {
@@ -134,10 +115,11 @@ extension Dictionary where Key == String {
 
 protocol GithubServicing {
     func fetchContentsList(of type: ContentType, pagename: String?, completion: @escaping (Result<[ContentItem], Error>) -> Void)
-    func fetchItem(item: ContentItem, completion: @escaping (Result<Page, Error>) -> Void)
-    func putItem(request: PutItemRequest, path: String, completion: @escaping (Result<Void, Error>) -> Void)
-    func putItem(item: ContentItem, content: Data, completion: @escaping (Result<Void, Error>) -> Void)
-    func deleteItem(request: DeleteItemRequest, path: String, completion: @escaping (Result<Void, Error>) -> Void)
+    func fetchPage(item: ContentItem, completion: @escaping (Result<Page, Error>) -> Void)
+    func fetchItem(path: String, completion: @escaping (Result<ContentItem?, Error>) -> Void)
+    func putItem(path: String, content: Data, completion: @escaping (Result<Void, Error>) -> Void)
+    func overwriteItem(item: ContentItem, content: Data, completion: @escaping (Result<Void, Error>) -> Void)
+    func deleteItem(item: ContentItem, completion: @escaping (Result<Void, Error>) -> Void)
     func deleteDirectory(message: String, path: String, completion: @escaping (Result<Void, Error>) -> Void)
 }
 
@@ -221,8 +203,12 @@ class GithubService: GithubServicing {
         AF.request(path, method: .get, headers: headers)
             .responseDecodable(of: [ContentItem].self, decoder: decoder, completionHandler: makeCompletion(completion))
     }
+    
+    func fetchItem(path: String, completion: @escaping (Result<ContentItem?, Error>) -> Void) {
+        fetchList(path: path) { completion($0.map(\.first)) }
+    }
 
-    func fetchItem(item: ContentItem, completion: @escaping (Result<Page, Error>) -> Void) {
+    func fetchPage(item: ContentItem, completion: @escaping (Result<Page, Error>) -> Void) {
         AF.request(item.downloadUrl, method: .get, headers: headers)
             .responseString {
                 completion($0.tryMap {
@@ -233,15 +219,19 @@ class GithubService: GithubServicing {
 
     // MARK: Put
     
-    func putItem(request: PutItemRequest, path: String, completion: @escaping (Result<Void, Error>) -> Void) {
+    private func putItem(request: PutItemRequest, path: String, completion: @escaping (Result<Void, Error>) -> Void) {
         AF.request("\(Self.apiContentsBase)/\(path)", method: .put, parameters: request, encoder: JSONParameterEncoder.default, headers: headers)
             .responseDecodable(of: PutItemResponse.self, decoder: decoder, completionHandler: makeVoidCompletion(completion))
     }
 
-    func putItem(item: ContentItem, content: Data, completion: @escaping (Result<Void, Error>) -> Void) {
+    func overwriteItem(item: ContentItem, content: Data, completion: @escaping (Result<Void, Error>) -> Void) {
         putItem(request: .init(from: item, content: content), path: item.path, completion: completion)
     }
 
+    func putItem(path: String, content: Data, completion: @escaping (Result<Void, Error>) -> Void) {
+        putItem(request: .init(content: content, sha: nil), path: path, completion: completion)
+    }
+    
     // MARK: Delete
     
     func deleteItem(request: DeleteItemRequest, path: String, completion: @escaping (Result<Void, Error>) -> Void) {
@@ -324,14 +314,14 @@ class GithubService: GithubServicing {
             group.leave()
         }
         
-        if let resourcesPath = page.metadata.resourcesDirectoryPath(pagename: pagename) {
+        if let resourcesPath = page.metadata.type?.resourcesDirectoryPath(pagename: pagename) {
             group.enter()
             deleteDirectory(message: message, path: resourcesPath, completion: completion)
         } else {
             // TODO: replace resourcesDirectoryPath optional to exceptions
         }
         
-        if let markdownPath = page.metadata.markdownPath(pagename: pagename) {
+        if let markdownPath = page.metadata.type?.markdownPath(pagename: pagename) {
             group.enter()
             deleteItem(message: message, path: markdownPath, completion: completion)
         } else {

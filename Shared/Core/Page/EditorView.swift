@@ -13,19 +13,19 @@ import HighlightedTextEditor
 
 struct EditorView: View {
     @Binding var text: String
-    @Binding var attachedImages: [String: ImageOrUrl]
+    @Binding var attachedImages: [String: LocalRemoteImage]
     @State private var selection: NSRange = .init()
     
-    init(text: Binding<String>, attachedImages: Binding<[String: ImageOrUrl]>) {
+    init(text: Binding<String>, attachedImages: Binding<[String: LocalRemoteImage]>) {
         self._text = text
         self._attachedImages = attachedImages
     }
     
-    private var images: [String: ImageOrUrl] {
-        var images = [String: ImageOrUrl]()
+    private var images: [String: LocalRemoteImage] {
+        var images = [String: LocalRemoteImage]()
         let _ = Ink.MarkdownParser(modifiers: [Ink.Modifier(target: .images) { html, markdown in
             let str = String(markdown[markdown.firstIndex(of: "(")! ... markdown.lastIndex(of: ")")!].dropFirst().dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !str.isEmpty, let image = ImageOrUrl.remote("Resources/" + str) else { return html }
+            guard !str.isEmpty, let image = LocalRemoteImage.remote("Resources/" + str) else { return html }
             images[str] = image
             return html
         }]).html(from: text)
@@ -42,11 +42,11 @@ struct EditorView: View {
                             KFImage(url).placeholder {
                                 ImagePickerButton(label: { Text("Add") }) { images in
                                     guard let image = images.first else { return }
-                                    attachedImages[path] = .image(image)
+                                    attachedImages[path] = .local(image)
                                 }.frame(width: 100, height: 100)
                             }.resizable().scaledToFit()
 
-                        case let .image(image):
+                        case let .local(image):
                             ImageView(image: image).resizable().scaledToFit()
                         }
 

@@ -19,4 +19,22 @@ enum ContentType: String, CaseIterable, Identifiable {
     var name: String {
         rawValue.capitalizingFirstLetter()
     }
+    
+    func markdownPath(pagename: String) -> String {
+        "Content/\(rawValue)/\(pagename).md"
+    }
+    
+    func resourcesDirectoryPath(pagename: String) -> String? {
+        path(pagename, nil, nil)
+    }
+
+    func url(_ pagename: String, _ filename: String, _ ext: String?) -> URL? {
+        guard let path = path(pagename, filename, ext) else { return nil }
+        return GithubService.rawUrl(path)
+    }
+
+    func path(_ pagename: String, _ filename: String?, _ ext: String?) -> String? {
+        if filename != nil, ext == nil { return nil }
+        return ["Resources", "img", rawValue, pagename.withoutExt, filename != nil ? "\(filename ?? "")\(ext ?? "")" : nil].compactMap { $0 }.joined(separator: "/")
+    }
 }

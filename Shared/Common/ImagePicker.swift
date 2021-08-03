@@ -46,19 +46,19 @@ struct ImagePickerButton<T: View>: View {
     }
 }
 
-enum ImageOrUrl: Equatable {
+enum LocalRemoteImage: Equatable {
     case remote(_ path: String, _ url: URL)
-    case image(Image)
+    case local(Image)
 
     var isLocal: Bool {
-        if case .image = self {
+        if case .local = self {
             return true
         }
         return false
     }
 }
 
-extension ImageOrUrl {
+extension LocalRemoteImage {
     static func remote(_ path: String) -> Self? {
         guard let url = GithubService.rawUrl(path) else { return nil }
         return .remote(path, url)
@@ -83,7 +83,7 @@ extension Snapshot {
 
 struct ImagePickerView: View {
     let title: String
-    @Binding var images: [ImageOrUrl]
+    @Binding var images: [LocalRemoteImage]
     let selectionLimit: Int
     
     var pickerLimit: Int { selectionLimit - images.count }
@@ -108,15 +108,16 @@ struct ImagePickerView: View {
         }.padding(.vertical, 8)
     }
 
-    private func imageEntry(_ entry: ImageOrUrl, _ index: Int) -> some View {
+    private func imageEntry(_ entry: LocalRemoteImage, _ index: Int) -> some View {
         ZStack(alignment: .topTrailing) {
             
             switch entry {
             case let .remote(_, url):
+                
                 KFImage(url).resizable().scaledToFit().frame(height: 100)
 
-            case let .image(imageVal):
-                ImageView(image: imageVal).resizable().scaledToFit().frame(height: 100)
+            case let .local(image):
+                ImageView(image: image).resizable().scaledToFit().frame(height: 100)
             }
 
             Button(action: {
@@ -128,7 +129,7 @@ struct ImagePickerView: View {
     }
     
     private func onImagesPicked(_ images: [Image]) {
-        self.images.append(contentsOf: images.map { .image($0) })
+        self.images.append(contentsOf: images.map { .local($0) })
     }
 }
 
@@ -183,10 +184,10 @@ public struct UIImagePicker: UIViewControllerRepresentable {
                 let itemProvider = result.itemProvider
                 if itemProvider.canLoadObject(ofClass: UIImage.self) {
                     group.enter()
-                    itemProvider.loadObject(ofClass: UIImage.self) { image, error in
+                    itemProvider.loadObject(ofClass: UIImage.self) { local, error in
                         defer { group.leave() }
-                        if let image = image as? UIImage {
-                            images.append(image)
+                        if let local = local as? UIImage {
+                            images.append(local)
                         }
                     }
                 }

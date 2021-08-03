@@ -11,7 +11,7 @@ import Kingfisher
 
 struct PreviewView: View {
     let page: Page
-    @Binding var attachedImages: [String: ImageOrUrl]
+    @Binding var attachedImages: [String: LocalRemoteImage]
     
     var body: some View {
         ScrollView(.vertical) {
@@ -40,7 +40,7 @@ extension PreviewView: ParmaRenderable {
             return .init(KFImage(url).resizable().scaledToFit())
             
             
-        case let .image(image):
+        case let .local(image):
             return .init(ImageView(image: image).resizable().scaledToFit())
             
         default:
