@@ -34,8 +34,8 @@ enum MainViewState {
 protocol MainViewModeling: ObservableObject {
     var state: MainViewState { get set }
     var isLoading: Bool { get set }
-    func onAppear()
-    func onDelete(type: ContentType, at offsets: IndexSet)
+    func refreshContent()
+    func onDelete(items: [ContentItem])
 }
 
 class MainViewModel: MainViewModeling {
@@ -44,7 +44,7 @@ class MainViewModel: MainViewModeling {
     @Published var state: MainViewState = .items(.init())
     @Published var isLoading = false
 
-    func onAppear() {
+    func refreshContent() {
         isLoading = true
         let group = DispatchGroup()
         
@@ -77,15 +77,14 @@ class MainViewModel: MainViewModeling {
         }
     }
     
-    func onDelete(type: ContentType, at offsets: IndexSet) {
+    func onDelete(items: [ContentItem]) {
         isLoading = true
         
         let group = DispatchGroup()
         
-        for item in offsets.compactMap({ state.items?[type]?[$0] }) {
+        for item in items {
             group.enter()
-            
-            
+            githubService.deleteItem(item: item) { _ in group.leave() }
         }
         
         group.notify(queue: .main) { [self] in isLoading = false }

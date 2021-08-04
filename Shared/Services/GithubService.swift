@@ -120,7 +120,7 @@ protocol GithubServicing {
     func putItem(path: String, content: Data, completion: @escaping (Result<Void, Error>) -> Void)
     func overwriteItem(item: ContentItem, content: Data, completion: @escaping (Result<Void, Error>) -> Void)
     func deleteItem(item: ContentItem, completion: @escaping (Result<Void, Error>) -> Void)
-    func deleteDirectory(message: String, path: String, completion: @escaping (Result<Void, Error>) -> Void)
+    func deleteDirectory(path: String, completion: @escaping (Result<Void, Error>) -> Void)
 }
 
 struct ContentItem: Codable, Hashable, Identifiable {
@@ -145,19 +145,19 @@ struct PutItemResponse: Codable {
 }
 
 struct PutItemRequest: Encodable {
-    var message: String = "Update content"
+    var message: String
     let content: Data
     let sha: String?
 }
 
 struct DeleteItemRequest: Encodable {
-    var message: String = "Delete content"
+    var message: String
     let sha: String?
 }
 
 extension PutItemRequest {
     init(from item: ContentItem, content: Data) {
-        self.init(content: content, sha: item.sha)
+        self.init(message: "Replace \(item.path.filename)", content: content, sha: item.sha)
     }
 }
 
@@ -229,26 +229,30 @@ class GithubService: GithubServicing {
     }
 
     func putItem(path: String, content: Data, completion: @escaping (Result<Void, Error>) -> Void) {
-        putItem(request: .init(content: content, sha: nil), path: path, completion: completion)
+        putItem(request: .init(message: "Create \(path.filename)", content: content, sha: nil), path: path, completion: completion)
     }
     
     // MARK: Delete
     
-    func deleteItem(request: DeleteItemRequest, path: String, completion: @escaping (Result<Void, Error>) -> Void) {
+    private func deleteItem(request: DeleteItemRequest, path: String, completion: @escaping (Result<Void, Error>) -> Void) {
         AF.request("\(Self.apiContentsBase)/\(path)", method: .delete, parameters: request, encoder: JSONParameterEncoder.default, headers: headers)
             .responseDecodable(of: PutItemResponse.self, decoder: decoder, completionHandler: makeVoidCompletion(completion))
     }
     
     func deleteItem(item: ContentItem, completion: @escaping (Result<Void, Error>) -> Void) {
-        deleteItem(request: .init(sha: item.sha), path: item.path, completion: completion)
+        deleteItem(item: item, messagePrefix: "", completion: completion)
     }
     
-    func deleteItem(message: String, path: String, completion: @escaping (Result<Void, Error>) -> Void) {
+    private func deleteItem(item: ContentItem, messagePrefix: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        deleteItem(request: .init(message: "Delete " + [messagePrefix, "file \(item.path.filename)"].joined(separator: ", "), sha: item.sha), path: item.path, completion: completion)
+    }
+    
+    func deleteItem(path: String, messagePrefix: String = "", completion: @escaping (Result<Void, Error>) -> Void) {
         fetchList(path: path) { result in
             switch result {
             case let .success(items):
                 if let item = items.first {
-                    self.deleteItem(item: item, completion: completion)
+                    self.deleteItem(item: item, messagePrefix: messagePrefix, completion: completion)
                 }
                 completion(.success(()))
                 
@@ -259,7 +263,12 @@ class GithubService: GithubServicing {
         
     }
     
-    func deleteDirectory(message: String, path: String, completion: @escaping (Result<Void, Error>) -> Void) {
+    func deleteDirectory(path: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        deleteDirectory(path: path, dir: nil, completion: completion)
+    }
+    
+    func deleteDirectory(path: String, dir: String?, completion: @escaping (Result<Void, Error>) -> Void) {
+        let dir = dir ?? path.filename
         fetchList(path: path) { result in
             switch result {
             case let .success(items):
@@ -272,11 +281,11 @@ class GithubService: GithubServicing {
                     switch item.type {
                     case .dir:
                         group.enter()
-                        self.deleteDirectory(message: message, path: item.path) { _ in group.leave() }
+                        self.deleteDirectory(path: item.path, dir: dir) { _ in group.leave() }
                     
                     case .file:
                         group.enter()
-                        self.deleteItem(item: item) { result in
+                        self.deleteItem(item: item, messagePrefix: "dir \(dir)") { result in
                             if case let .failure(err) = result {
                                 error = err
                             }
@@ -302,7 +311,7 @@ class GithubService: GithubServicing {
         }
     }
     
-    func deletePage(message: String, page: Page, pagename: String, completion: @escaping (Result<Void, Error>) -> Void) {
+    func deletePage(page: Page, pagename: String, completion: @escaping (Result<Void, Error>) -> Void) {
         let group = DispatchGroup()
         
         var error: Error?
@@ -316,14 +325,14 @@ class GithubService: GithubServicing {
         
         if let resourcesPath = page.metadata.type?.resourcesDirectoryPath(pagename: pagename) {
             group.enter()
-            deleteDirectory(message: message, path: resourcesPath, completion: completion)
+            deleteDirectory(path: resourcesPath, completion: completion)
         } else {
             // TODO: replace resourcesDirectoryPath optional to exceptions
         }
         
         if let markdownPath = page.metadata.type?.markdownPath(pagename: pagename) {
             group.enter()
-            deleteItem(message: message, path: markdownPath, completion: completion)
+            deleteItem(path: markdownPath, completion: completion)
         } else {
             // TODO: replace markdownPath optional to exceptions
         }

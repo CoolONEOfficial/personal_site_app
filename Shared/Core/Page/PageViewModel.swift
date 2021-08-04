@@ -167,7 +167,7 @@ class PageViewModel: PageViewModeling {
         for (path, newImage) in attachedImages.value.minus(dict: attachedImages.original) {
             let oldImage = attachedImages.original[path]
             
-            let imageName = String(path.split(separator: "/").last ?? .init(path)).withoutExt
+            let imageName = path.filename.withoutExt
             putImage(page: page, image: .init(original: oldImage, value: newImage), filename: imageName, ext: ".png", group: group)
         }
         

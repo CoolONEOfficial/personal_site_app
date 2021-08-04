@@ -14,15 +14,34 @@ struct MainView<Model: MainViewModeling>: View {
     
     @State private var isGroupOpened: ContentType?
     
-    func isActive(_ k1: ContentType, _ k2: String) -> Binding<Bool> {
-        Binding(get: { isPageActive[k1, default: [:]][k2, default: false] }, set: { isPageActive[k1, default: [:]][k2] = $0 })
+    private func isActive(_ k1: ContentType, _ k2: String) -> Binding<Bool> {
+        Binding(
+            get: {
+                isPageActive[k1, default: [:]][k2, default: false]
+            },
+            set: {
+                isPageActive[k1, default: [:]][k2] = $0
+                if !$0 {
+                    onPop()
+                }
+            }
+        )
+    }
+    
+    func onPop() {
+        viewModel.refreshContent()
     }
     
     func delete(type: ContentType, at offsets: IndexSet) {
+        var deletedItems = [ContentItem]()
         viewModel.state.updateItems { items in
-            items[type]?.remove(atOffsets: offsets)
+            for offset in offsets {
+                if let item = items[type]?.remove(at: offset) {
+                    deletedItems.append(item)
+                }
+            }
         }
-        viewModel.onDelete(type: type, at: offsets)
+        viewModel.onDelete(items: deletedItems)
     }
     
     func list(_ items: [ContentType: [ContentItem]]) -> some View {
@@ -87,11 +106,11 @@ struct MainView<Model: MainViewModeling>: View {
     var body: some View {
         NavigationView {
             entriesSection
-                .navigationBarHidden(viewModel.isLoading)
+                .navigationBarHidden(viewModel.isLoading && (viewModel.state.items?.isEmpty ?? true))
                 .navigationTitle("Sections")
                 .listStyle(SidebarListStyle())
         }.onFirstAppear {
-            viewModel.onAppear()
+            viewModel.refreshContent()
             #if os(iOS)
             UIScrollView.appearance().keyboardDismissMode = .onDrag
             #endif

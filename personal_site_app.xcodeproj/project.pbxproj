@@ -12,6 +12,8 @@
 		851F72EE26AB15D100E65D5F /* View+onFirstAppear.swift in Sources */ = {isa = PBXBuildFile; fileRef = 851F72EC26AB15D100E65D5F /* View+onFirstAppear.swift */; };
 		851F72F426ADE94500E65D5F /* HighlightedTextEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 851F72F326ADE94500E65D5F /* HighlightedTextEditor */; };
 		851F72F626ADE95400E65D5F /* HighlightedTextEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 851F72F526ADE95400E65D5F /* HighlightedTextEditor */; };
+		855E535D26BAA1AF00B8D6C4 /* String+path.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855E535C26BAA1AF00B8D6C4 /* String+path.swift */; };
+		855E535E26BAA1AF00B8D6C4 /* String+path.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855E535C26BAA1AF00B8D6C4 /* String+path.swift */; };
 		855FDA7F26B36F01003CE86B /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855FDA7E26B36F01003CE86B /* Config.swift */; };
 		855FDA8026B36F01003CE86B /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855FDA7E26B36F01003CE86B /* Config.swift */; };
 		85773A8B2690BD9B004083BE /* Tests_iOS.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85773A8A2690BD9B004083BE /* Tests_iOS.swift */; };
@@ -133,6 +135,7 @@
 /* Begin PBXFileReference section */
 		851F72E626AA36DF00E65D5F /* personal_site_app.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = personal_site_app.entitlements; sourceTree = "<group>"; };
 		851F72EC26AB15D100E65D5F /* View+onFirstAppear.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+onFirstAppear.swift"; sourceTree = "<group>"; };
+		855E535C26BAA1AF00B8D6C4 /* String+path.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+path.swift"; sourceTree = "<group>"; };
 		855FDA7E26B36F01003CE86B /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		85773A6F2690BD9A004083BE /* personal_site_appApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = personal_site_appApp.swift; sourceTree = "<group>"; };
 		85773A712690BD9B004083BE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -343,6 +346,7 @@
 				85983BB926A1A05E0051DA2D /* ImagePicker.swift */,
 				85983BBF26A1AB060051DA2D /* Image.swift */,
 				851F72EC26AB15D100E65D5F /* View+onFirstAppear.swift */,
+				855E535C26BAA1AF00B8D6C4 /* String+path.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
@@ -620,6 +624,7 @@
 				85773B4F269C9789004083BE /* MultiText.swift in Sources */,
 				85773AED269101B5004083BE /* ProjectMetadata.swift in Sources */,
 				851F72ED26AB15D100E65D5F /* View+onFirstAppear.swift in Sources */,
+				855E535D26BAA1AF00B8D6C4 /* String+path.swift in Sources */,
 				85773B232691CFC8004083BE /* PageViewModel.swift in Sources */,
 				85773B3D269346B8004083BE /* Navbar+color.swift in Sources */,
 				85773B342693276B004083BE /* EditorView.swift in Sources */,
@@ -659,6 +664,7 @@
 				85773B50269C9789004083BE /* MultiText.swift in Sources */,
 				85773AEE269101B5004083BE /* ProjectMetadata.swift in Sources */,
 				851F72EE26AB15D100E65D5F /* View+onFirstAppear.swift in Sources */,
+				855E535E26BAA1AF00B8D6C4 /* String+path.swift in Sources */,
 				85773B242691CFC8004083BE /* PageViewModel.swift in Sources */,
 				85773B3E269346B8004083BE /* Navbar+color.swift in Sources */,
 				85773B352693276B004083BE /* EditorView.swift in Sources */,
@@ -836,7 +842,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "ru.coolone.personal-site-app";
+				PRODUCT_BUNDLE_IDENTIFIER = "ru.coolone.personal-site-app2";
 				PRODUCT_NAME = personal_site_app;
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = YES;
@@ -860,7 +866,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "ru.coolone.personal-site-app";
+				PRODUCT_BUNDLE_IDENTIFIER = "ru.coolone.personal-site-app2";
 				PRODUCT_NAME = personal_site_app;
 				SDKROOT = iphoneos;
 				SUPPORTS_MACCATALYST = YES;
