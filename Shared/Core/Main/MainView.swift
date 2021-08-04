@@ -90,7 +90,9 @@ struct MainView<Model: MainViewModeling>: View {
 
             if viewModel.isLoading {
                 ZStack(alignment: .center) {
-                    Rectangle().fill(Color.gray.opacity(0.3))
+                    if viewModel.state.items?.isEmpty == false {
+                        Rectangle().fill(Color.gray.opacity(0.3))
+                    }
                     ProgressView("Loading...")
                 }.ignoresSafeArea(.all, edges: .all)
             }
