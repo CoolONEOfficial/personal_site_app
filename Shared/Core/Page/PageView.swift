@@ -12,6 +12,7 @@ struct PageView<Model: PageViewModeling>: View {
     @ObservedObject var viewModel: Model
     @State var finishAlert: Bool = false
     @Binding var isPageActive: Bool
+    var needsToRefresh: () -> Void
     
     var body: some View {
         switch viewModel.state {
@@ -64,26 +65,22 @@ struct PageView<Model: PageViewModeling>: View {
             }
         }
         .alert(isPresented: $finishAlert) {
-            if viewModel.isNewPage {
-                return Alert(
-                    title: Text("Are you sure you want to create page?"),
-                    message: Text(""),
-                    primaryButton: .default(Text("Yes"), action: { viewModel.apply(dismissCompletion: dismiss) }),
-                    secondaryButton: .cancel()
-                )
-            } else {
-                return Alert(
-                    title: Text("Are you sure you want to apply changes?"),
-                    message: Text(""),
-                    primaryButton: .default(Text("Yes"), action: { viewModel.apply(dismissCompletion: dismiss) }),
-                    secondaryButton: .cancel()
-                )
-            }
+            Alert(
+                title: Text(viewModel.isNewPage
+                                ? "Are you sure you want to create page?"
+                                : "Are you sure you want to apply changes?"),
+                message: Text(""),
+                primaryButton: .default(Text("Yes"), action: { viewModel.apply { dismiss(withRefresh: true) } }),
+                secondaryButton: .cancel()
+            )
         }
     }
     
-    func dismiss() {
+    func dismiss(withRefresh: Bool) {
         isPageActive = false
+        if withRefresh {
+            needsToRefresh()
+        }
     }
 
     var placement: ToolbarItemPlacement {

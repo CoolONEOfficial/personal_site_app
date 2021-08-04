@@ -13,6 +13,7 @@ struct MainView<Model: MainViewModeling>: View {
     @State var isPageActive = [ContentType: [String: Bool]]()
     
     @State private var isGroupOpened: ContentType?
+    @State private var deleteCompletion: ((Bool) -> Void)?
     
     private func isActive(_ k1: ContentType, _ k2: String) -> Binding<Bool> {
         Binding(
@@ -31,19 +32,7 @@ struct MainView<Model: MainViewModeling>: View {
     func onPop() {
         viewModel.refreshContent()
     }
-    
-    func delete(type: ContentType, at offsets: IndexSet) {
-        var deletedItems = [ContentItem]()
-        viewModel.state.updateItems { items in
-            for offset in offsets {
-                if let item = items[type]?.remove(at: offset) {
-                    deletedItems.append(item)
-                }
-            }
-        }
-        viewModel.onDelete(items: deletedItems)
-    }
-    
+
     func list(_ items: [ContentType: [ContentItem]]) -> some View {
         List {
             ForEach(items.sorted { $0.key.rawValue < $1.key.rawValue }, id: \.key.rawValue) { (type, items) in
@@ -55,12 +44,25 @@ struct MainView<Model: MainViewModeling>: View {
                 ) {
                     ForEach(items) { item in
                         let isActive = self.isActive(type, item.name)
-                        NavigationLink(item.name, destination: PageView(viewModel: PageViewModel(item: item, pagename: item.name.withoutExt), isPageActive: isActive), isActive: isActive)
+                        NavigationLink(item.name, destination: PageView(viewModel: PageViewModel(item: item, pagename: item.name.withoutExt), isPageActive: isActive, needsToRefresh: viewModel.refreshContent), isActive: isActive)
                     }
-                    .onDelete { delete(type: type, at: $0) }
+                    .onDelete { offsets in
+                        let oldItems = viewModel.state.items
+                        var deletedItems = [ContentItem]()
+                        viewModel.state.updateItems { items in
+                            for offset in offsets {
+                                if let item = items[type]?.remove(at: offset) {
+                                    deletedItems.append(item)
+                                }
+                            }
+                        }
+                        deleteCompletion = {
+                            viewModel.deleteCompletion(confirm: $0, deletedItems: deletedItems, oldItems: oldItems)
+                        }
+                    }
 
                     let isActive = isActive(type, "new")
-                    NavigationLink("Create new", destination: PageView(viewModel: PageViewModel(type: type), isPageActive: isActive), isActive: isActive)
+                    NavigationLink("Create new", destination: PageView(viewModel: PageViewModel(type: type), isPageActive: isActive, needsToRefresh: viewModel.refreshContent), isActive: isActive)
                 } label: {
                     Text(type.name)
                 }
@@ -74,6 +76,19 @@ struct MainView<Model: MainViewModeling>: View {
                 }
             }
             #endif
+        }
+        .alert(isPresented: .init(get: { deleteCompletion != nil }, set: { _ in })) {
+            Alert(
+                title: Text("Are you sure you want to delete page?"),
+                message: Text(""),
+                primaryButton: .default(Text("Yes"), action: { deleteCompletion?(true) }),
+                secondaryButton: .cancel {
+                    withAnimation {
+                        deleteCompletion?(false)
+                        deleteCompletion = nil
+                    }
+                }
+            )
         }
     }
 

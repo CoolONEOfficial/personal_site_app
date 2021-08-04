@@ -36,6 +36,7 @@ protocol MainViewModeling: ObservableObject {
     var isLoading: Bool { get set }
     func refreshContent()
     func onDelete(items: [ContentItem])
+    func deleteCompletion(confirm: Bool, deletedItems: [ContentItem], oldItems: MainViewState.Items?)
 }
 
 class MainViewModel: MainViewModeling {
@@ -44,6 +45,14 @@ class MainViewModel: MainViewModeling {
     @Published var state: MainViewState = .items(.init())
     @Published var isLoading = false
 
+    func deleteCompletion(confirm: Bool, deletedItems: [ContentItem], oldItems: MainViewState.Items?) {
+        if confirm {
+            onDelete(items: deletedItems)
+        } else {
+            state.items = oldItems
+        }
+    }
+    
     func refreshContent() {
         isLoading = true
         let group = DispatchGroup()
