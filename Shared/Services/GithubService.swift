@@ -8,6 +8,7 @@
 import Foundation
 import Alamofire
 import Ink
+import Zip
 
 struct PageMetadata: Codable {
     var description: String
@@ -121,6 +122,8 @@ protocol GithubServicing {
     func overwriteItem(item: ContentItem, content: Data, completion: @escaping (Result<Void, Error>) -> Void)
     func deleteItem(item: ContentItem, completion: @escaping (Result<Void, Error>) -> Void)
     func deleteDirectory(path: String, completion: @escaping (Result<Void, Error>) -> Void)
+    func downloadRepo(progressHandler: @escaping (Double) -> Void, completion: @escaping (Result<URL?, Error>) -> Void)
+    func unpackRepo(progressHandler: @escaping (Double) -> Void, from fileUrl: URL, to unzipUrl: URL, completion: @escaping (Result<Void, Error>) -> Void)
 }
 
 struct ContentItem: Codable, Hashable, Identifiable {
@@ -184,6 +187,35 @@ class GithubService: GithubServicing {
         return decoder
     }()
 
+    func downloadRepo(progressHandler: @escaping (Double) -> Void, completion: @escaping (Result<URL?, Error>) -> Void) {
+        let fm = FileManager.default
+        if let fileUrl = (try? fm.contentsOfDirectory(at: fm.getDocumentsDirectory()))?.first { $0.lastPathComponent.contains(".zip") } {
+            completion(.success(fileUrl))
+        } else {
+            AF.download("\(Self.repoUrl)/archive/refs/heads/master.zip", method: .get, to: DownloadRequest.suggestedDownloadDestination(options: [.removePreviousFile, .createIntermediateDirectories]))
+                .downloadProgress { progress in
+                    progressHandler(progress.fractionCompleted)
+                }
+                .response(completionHandler: makeCompletion(completion))
+        }
+    }
+    
+    func unpackRepo(progressHandler: @escaping (Double) -> Void, from fileUrl: URL, to unzipUrl: URL, completion: @escaping (Result<Void, Error>) -> Void) {
+        do {
+            try Zip.unzipFile(fileUrl, destination: unzipUrl, overwrite: true, password: nil, progress: progressHandler)
+            let folderUrl = unzipUrl.appendingPathComponent(fileUrl.lastPathComponent.withoutExt)
+            
+            let fm = FileManager.default
+            try fm.copyDirectoryContents(at: folderUrl, to: folderUrl.deletingLastPathComponent())
+            try fm.removeItem(at: folderUrl)
+            try fm.removeItem(at: fileUrl)
+            
+            completion(.success(()))
+       
+        } catch {
+            completion(.failure(error))
+        }
+    }
     
     // MARK: Fetch
     
@@ -358,5 +390,27 @@ private extension GithubService {
 
     func makeVoidCompletion<T>(_ completion: @escaping (Result<Void, Error>) -> Void) -> (DataResponse<T, AFError>) -> Void {
         makeCompletion { completion($0.map { _ in () }) }
+    }
+    
+    func makeCompletion<T>(_ completion: @escaping (Result<T, Error>) -> Void) -> (DownloadResponse<T, AFError>) -> Void {
+        {
+            completion($0.result.mapError { $0 as Error })
+        }
+    }
+
+    func makeVoidCompletion<T>(_ completion: @escaping (Result<Void, Error>) -> Void) -> (DownloadResponse<T, AFError>) -> Void {
+        makeCompletion { completion($0.map { _ in () }) }
+    }
+}
+
+extension FileManager {
+    func getDocumentsDirectory() -> URL {
+        let paths = urls(for: .documentDirectory, in: .userDomainMask)
+        let documentsDirectory = paths[0]
+        return documentsDirectory
+    }
+    
+    func contentsOfDirectory(at url: URL) throws -> [URL] {
+        try contentsOfDirectory(at: url, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
     }
 }

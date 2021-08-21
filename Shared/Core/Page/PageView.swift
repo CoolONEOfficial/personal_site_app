@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import Parma
 
 struct PageView<Model: PageViewModeling>: View {
     @ObservedObject var viewModel: Model
@@ -39,7 +38,7 @@ struct PageView<Model: PageViewModeling>: View {
                 NavigationView {
                     editorView(page: page)
                     metadataView(page: page)
-                    PreviewView(page: page, attachedImages: $viewModel.attachedImages.value)
+                    previewView(page: page)
                 }
             } else {
                 tabs(page)
@@ -95,7 +94,7 @@ struct PageView<Model: PageViewModeling>: View {
     func tabs(_ page: Page) -> some View {
         switch viewModel.tab {
         case .preview:
-            PreviewView(page: page, attachedImages: $viewModel.attachedImages.value)
+            previewView(page: page)
             
         case .editor:
             editorView(page: page)
@@ -121,5 +120,17 @@ struct PageView<Model: PageViewModeling>: View {
             viewModel.updateView()
         }), pagename: $viewModel.pagename, logo: $viewModel.logo.value, singleImage: $viewModel.singleImage.value)
         
+    }
+    
+    func previewView(page: Page) -> some View {
+        PreviewView(
+            viewModel: PreviewViewModel(
+                content: page.content,
+                type: page.metadata.type!,
+                pagename: viewModel.pagename
+            ),
+            page: page,
+            attachedImages: $viewModel.attachedImages.value
+        )
     }
 }

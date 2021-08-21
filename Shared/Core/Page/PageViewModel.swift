@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import CryptoKit
 
 enum Tab: Equatable {
     case editor
@@ -45,10 +44,10 @@ protocol PageViewModeling: ObservableObject {
     var attachedImages: Snapshot<[String: LocalRemoteImage]> { get set }
     var logo: Snapshot<LocalRemoteImage?> { get set }
     var singleImage: Snapshot<LocalRemoteImage?> { get set }
-    func updateView()
     var applyEnabled: Bool { get }
     func apply(dismissCompletion: @escaping () -> Void)
     func onAppear()
+    func updateView()
 }
 
 class PageViewModel: PageViewModeling {
@@ -218,15 +217,6 @@ extension CareerMetadata {
 
 extension AchievementMetadata {
     static let new: Self = .init(type: .certificate)
-}
-
-extension Digest {
-    var bytes: [UInt8] { Array(makeIterator()) }
-    var data: Data { Data(bytes) }
-
-    var hexStr: String {
-        bytes.map { String(format: "%02X", $0) }.joined()
-    }
 }
 
 extension Dictionary where Key: Comparable, Value: Equatable {
