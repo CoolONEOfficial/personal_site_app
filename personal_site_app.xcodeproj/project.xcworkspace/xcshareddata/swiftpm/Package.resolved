@@ -60,7 +60,7 @@
         "repositoryURL": "https://github.com/onevcat/Kingfisher",
         "state": {
           "branch": "master",
-          "revision": "c7deab70ca2caa98b9ca54cbb865812eac617751",
+          "revision": "49608a7c6d3ca0bddcd9fac1b33e0b8ca923fbb5",
           "version": null
         }
       },
@@ -89,6 +89,15 @@
           "branch": null,
           "revision": "e1577acf2b6e90086d01a6d5e2b8efdaae033568",
           "version": "2.3.0"
+        }
+      },
+      {
+        "package": "Splash",
+        "repositoryURL": "https://github.com/johnsundell/splash.git",
+        "state": {
+          "branch": null,
+          "revision": "7f4df436eb78fe64fe2c32c58006e9949fa28ad8",
+          "version": "0.16.0"
         }
       },
       {

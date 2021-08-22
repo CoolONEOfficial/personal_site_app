@@ -24,11 +24,35 @@ class PublishService: PublishServicing {
                 let resUrl = url.appendingPathComponent("Resources")
                 try fm.copyDirectoryContents(at: resUrl, to: outputUrl)
                 
-                try PortfolioSite().publish(withTheme: Theme<PortfolioSite>(
-                    htmlFactory: PortfolioHTMLFactory(),
-                    resourcePaths: []
-                ), at: Publish.Path(url.path))
-                
+                try PortfolioSite().publish(
+                    withTheme: Theme<PortfolioSite>(
+                        htmlFactory: PortfolioHTMLFactory(),
+                        resourcePaths: []
+                    ),
+                    at: Publish.Path(url.path),
+                    plugins: [
+                        .splash(withClassPrefix: ""),
+                        .darkImage(),
+                        .itemImage(),
+                        .tinySlider(jsPath: "/modules/tiny-slider/src/tiny-slider.js", defaultConfig: [
+                            "mouseDrag": true,
+                            "swipeAngle": false,
+                            "controls": false,
+                            "nav": false,
+                            "loop": false,
+                            "lazyload": true,
+                            "responsive": [
+                                "350": [
+                                    "items": 2
+                                ],
+                                "500": [
+                                    "items": 3
+                                ]
+                            ],
+                        ])
+                    ]
+                )
+
                 try fm.copyDirectoryContents(at: outputUrl.appendingPathComponent("css"), to: outputUrl)
 
                 completion(.success(outputUrl))
