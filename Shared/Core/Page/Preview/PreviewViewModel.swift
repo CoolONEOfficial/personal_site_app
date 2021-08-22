@@ -36,6 +36,7 @@ protocol PreviewViewModeling: ObservableObject {
     var state: PreviewViewState { get set }
     func onAppear()
     func onDisappear()
+    func reloadRepo()
 }
 
 class PreviewViewModel: PreviewViewModeling {
@@ -63,11 +64,22 @@ class PreviewViewModel: PreviewViewModeling {
     func onAppear() {
         guard !appear else { return }
         appear = true
-        downloadRepo()
+        if (try? fm.contentsOfDirectory(at: docUrl, includingPropertiesForKeys: nil).count) ?? 0 == 0 {
+            downloadRepo()
+        } else {
+            generatePreview()
+        }
     }
     
     func onDisappear() {
         previewServerService.stop()
+    }
+    
+    func reloadRepo() {
+        for item in (try? fm.contentsOfDirectory(at: docUrl, includingPropertiesForKeys: nil)) ?? [] {
+            try? fm.removeItem(at: item)
+        }
+        downloadRepo()
     }
 }
 
@@ -77,9 +89,6 @@ private extension PreviewViewModel {
     }
     
     func downloadRepo() {
-        for item in (try? fm.contentsOfDirectory(at: docUrl, includingPropertiesForKeys: nil)) ?? [] {
-            try? fm.removeItem(at: item)
-        }
         githubService.downloadRepo(
             progressHandler: { [self] progress in
                 state = .loading(.download, progress)

@@ -31,7 +31,17 @@ struct PreviewView<Model: PreviewViewModeling>: View {
             ErrorView(error: error)
             
         case let .url(url):
-            WebView(url: url).ignoresSafeArea().onDisappear(perform: viewModel.onDisappear)
+            ZStack(alignment: .topTrailing) {
+                WebView(url: url).ignoresSafeArea().onDisappear(perform: viewModel.onDisappear)
+                Button(action: {
+                    viewModel.reloadRepo()
+                }, label: {
+                    ImageView(systemName: "repeat")
+                        .padding()
+                        .background(RoundedRectangle(cornerRadius: 8).fill(Color(UIColor.systemBackground)))
+                }).padding()
+            }
+            
         }
     }
     
