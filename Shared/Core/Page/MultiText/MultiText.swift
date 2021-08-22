@@ -20,7 +20,7 @@ struct MultiText<LabelView: View, Selectable: Identifiable & Hashable>: View {
     }
 
     var body: some View {
-        NavigationLink(destination: multiTextView()) {
+        NavigationLink(destination: NavigationLazyView(multiTextView())) {
             HStack {
                 label
                 Spacer()

@@ -63,11 +63,7 @@ class PreviewViewModel: PreviewViewModeling {
     func onAppear() {
         guard !appear else { return }
         appear = true
-       // if Self.hasChanges(url: markdownUrl, content: content) {
-            downloadRepo()
-//        } else {
-//            generatePreview()
-//        }
+        downloadRepo()
     }
     
     func onDisappear() {

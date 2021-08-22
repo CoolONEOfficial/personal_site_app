@@ -77,6 +77,8 @@
 		85983BC126A1AB060051DA2D /* Image.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85983BBF26A1AB060051DA2D /* Image.swift */; };
 		85B1C77426D2E462004483F3 /* Ink in Frameworks */ = {isa = PBXBuildFile; productRef = 85B1C77326D2E462004483F3 /* Ink */; };
 		85BAF77326D2E69A00C46A91 /* Splash in Frameworks */ = {isa = PBXBuildFile; productRef = 85BAF77226D2E69A00C46A91 /* Splash */; };
+		85BAF77526D2EFB100C46A91 /* NavigationLazyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BAF77426D2EFB100C46A91 /* NavigationLazyView.swift */; };
+		85BAF77626D2EFB100C46A91 /* NavigationLazyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BAF77426D2EFB100C46A91 /* NavigationLazyView.swift */; };
 		85C17A4926A06A8A00FF8FBB /* Encodable+dict.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85C17A4826A06A8A00FF8FBB /* Encodable+dict.swift */; };
 		85C17A4A26A06A8A00FF8FBB /* Encodable+dict.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85C17A4826A06A8A00FF8FBB /* Encodable+dict.swift */; };
 		85C17A4C26A0D3D200FF8FBB /* ListText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85C17A4B26A0D3D200FF8FBB /* ListText.swift */; };
@@ -196,6 +198,7 @@
 		8591512A26D2E18F001AC341 /* TinySliderPublishPlugin.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TinySliderPublishPlugin.swift; sourceTree = "<group>"; };
 		85983BB926A1A05E0051DA2D /* ImagePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePicker.swift; sourceTree = "<group>"; };
 		85983BBF26A1AB060051DA2D /* Image.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Image.swift; sourceTree = "<group>"; };
+		85BAF77426D2EFB100C46A91 /* NavigationLazyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationLazyView.swift; sourceTree = "<group>"; };
 		85C17A4826A06A8A00FF8FBB /* Encodable+dict.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Encodable+dict.swift"; sourceTree = "<group>"; };
 		85C17A4B26A0D3D200FF8FBB /* ListText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListText.swift; sourceTree = "<group>"; };
 		85EA6B5426BD569F008A3FBC /* Types.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Types.swift; path = Shared/portfolio_site/Sources/PortfolioSite/Metadata/Types.swift; sourceTree = SOURCE_ROOT; };
@@ -364,6 +367,7 @@
 				85773AC92690E15A004083BE /* Models */,
 				85773AC32690E108004083BE /* Main */,
 				85773B252691D9AF004083BE /* ErrorView.swift */,
+				85BAF77426D2EFB100C46A91 /* NavigationLazyView.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -814,6 +818,7 @@
 				85EA6B6A26BD5881008A3FBC /* Node+bootstrap.swift in Sources */,
 				85EA6B5C26BD56A0008A3FBC /* EventMetadata.swift in Sources */,
 				85773B0E269126F9004083BE /* ContentType.swift in Sources */,
+				85BAF77526D2EFB100C46A91 /* NavigationLazyView.swift in Sources */,
 				85773AFD26910A87004083BE /* MarkdownMetadataDecoder.swift in Sources */,
 				85773B4C2699D842004083BE /* EnumPicker.swift in Sources */,
 				8591515226D2E18F001AC341 /* SplashPublishPlugin.swift in Sources */,
@@ -835,6 +840,7 @@
 				85983BBB26A1A05E0051DA2D /* ImagePicker.swift in Sources */,
 				85EA6B8D26BEA46E008A3FBC /* PreviewViewModel.swift in Sources */,
 				85EA6B7126BD5881008A3FBC /* Attribute+attrs.swift in Sources */,
+				85BAF77626D2EFB100C46A91 /* NavigationLazyView.swift in Sources */,
 				85773AD02690E21A004083BE /* GithubService.swift in Sources */,
 				8591515326D2E18F001AC341 /* SplashPublishPlugin.swift in Sources */,
 				85773B272691D9AF004083BE /* ErrorView.swift in Sources */,

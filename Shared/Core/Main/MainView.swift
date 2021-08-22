@@ -47,7 +47,16 @@ struct MainView<Model: MainViewModeling>: View {
                 ) {
                     ForEach(items) { item in
                         let isActive = self.isActive(type, item.name)
-                        NavigationLink(item.name, destination: PageView(viewModel: PageViewModel(item: item, pagename: item.name.withoutExt), isPageActive: isActive, needsToRefresh: viewModel.refreshContent), isActive: isActive)
+                        NavigationLink(
+                            item.name,
+                            destination: NavigationLazyView(
+                                PageView(
+                                    viewModel: PageViewModel(item: item, pagename: item.name.withoutExt),
+                                    isPageActive: isActive, needsToRefresh: viewModel.refreshContent
+                                )
+                            ),
+                            isActive: isActive
+                        )
                     }
                     .onDelete { offsets in
                         let oldItems = viewModel.state.items
@@ -65,7 +74,16 @@ struct MainView<Model: MainViewModeling>: View {
                     }
 
                     let isActive = isActive(type, "new")
-                    NavigationLink("Create new", destination: PageView(viewModel: PageViewModel(type: type), isPageActive: isActive, needsToRefresh: viewModel.refreshContent), isActive: isActive)
+                    NavigationLink(
+                        "Create new",
+                        destination: NavigationLazyView(
+                            PageView(
+                                viewModel: PageViewModel(type: type),
+                                isPageActive: isActive, needsToRefresh: viewModel.refreshContent
+                            )
+                        ),
+                        isActive: isActive
+                    )
                 } label: {
                     Text(type.name)
                 }
