@@ -5,7 +5,7 @@
 //  Created by Nickolay Truhin on 04.07.2021.
 //
 
-import Foundation
+import UIKit
 
 enum Tab: Equatable {
     case editor
@@ -173,7 +173,15 @@ class PageViewModel: PageViewModeling {
         group.notify(queue: .main, execute: dismissCompletion)
     }
 
-    func putImage(page: Page, image: Snapshot<LocalRemoteImage?>, filename: String, ext: String?, group: DispatchGroup) {
+    func putImage(page: Page, image: Snapshot<LocalRemoteImage?>, filename: String, ext: String?, group: DispatchGroup, withMiniature: Bool = false) {
+        if withMiniature, let imageValue = image.value?.image {
+            var image = image
+
+            let imageValueResized = imageValue.scalePreservingAspectRatio(targetSize: .init(width: 400, height: 400))
+            image.value?.image = imageValueResized
+
+            putImage(page: page, image: image, filename: filename + "_400x400", ext: ext, group: group)
+        }
         guard let path = page.metadata.type?.path(pagename, filename, ext) else { return }
         
         group.enter()
@@ -227,5 +235,35 @@ extension Dictionary where Key: Comparable, Value: Equatable {
             res[entry.0] = entry.1
             return res
         }
+    }
+}
+
+extension Image {
+    func scalePreservingAspectRatio(targetSize: CGSize) -> Image {
+        // Determine the scale factor that preserves aspect ratio
+        let widthRatio = targetSize.width / size.width
+        let heightRatio = targetSize.height / size.height
+        
+        let scaleFactor = min(widthRatio, heightRatio)
+        
+        // Compute the new image size that preserves aspect ratio
+        let scaledImageSize = CGSize(
+            width: size.width * scaleFactor,
+            height: size.height * scaleFactor
+        )
+
+        // Draw and return the resized UIImage
+        let renderer = UIGraphicsImageRenderer(
+            size: scaledImageSize
+        )
+
+        let scaledImage = renderer.image { _ in
+            self.draw(in: CGRect(
+                origin: .zero,
+                size: scaledImageSize
+            ))
+        }
+        
+        return scaledImage
     }
 }

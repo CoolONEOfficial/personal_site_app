@@ -110,15 +110,19 @@ struct PageView<Model: PageViewModeling>: View {
                 page.content = text
             }
             viewModel.updateView()
-        }), attachedImages: $viewModel.attachedImages.value)
+        }), attachedImages: $viewModel.attachedImages.value, metadata: metadataBinding(page: page), pagename: $viewModel.pagename)
         
     }
 
-    func metadataView(page: Page) -> some View {
-        MetadataView(metadata: .init(get: { page.metadata }, set: { meta in
+    func metadataBinding(page: Page) -> Binding<PageMetadata> {
+        .init(get: { page.metadata }, set: { meta in
             page.metadata = meta
             viewModel.updateView()
-        }), pagename: $viewModel.pagename, logo: $viewModel.logo.value, singleImage: $viewModel.singleImage.value)
+        })
+    }
+    
+    func metadataView(page: Page) -> some View {
+        MetadataView(metadata: metadataBinding(page: page), pagename: $viewModel.pagename, logo: $viewModel.logo.value, singleImage: $viewModel.singleImage.value)
         
     }
     

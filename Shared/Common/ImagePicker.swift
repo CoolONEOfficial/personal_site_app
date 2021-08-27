@@ -21,7 +21,7 @@ struct ImagePickerButton<T: View>: View {
     var onImagesPicked: (_ images: [Image]) -> Void
     let selectionLimit: Int
     
-    init(label: @escaping () -> T, completion onImagesPicked: @escaping (_ images: [Image]) -> Void, selectionLimit: Int = 1) {
+    init(label: @escaping () -> T, selectionLimit: Int = 1, completion onImagesPicked: @escaping (_ images: [Image]) -> Void) {
         self.label = label
         self.onImagesPicked = onImagesPicked
         self.selectionLimit = selectionLimit
@@ -51,10 +51,20 @@ enum LocalRemoteImage: Equatable {
     case local(Image)
 
     var isLocal: Bool {
-        if case .local = self {
-            return true
+        image != nil
+    }
+
+    var image: Image? {
+        get {
+            if case let .local(image) = self {
+                return image
+            }
+            return nil
         }
-        return false
+        set {
+            guard let newValue = newValue else { return }
+            self = .local(newValue)
+        }
     }
 }
 
@@ -99,7 +109,7 @@ struct ImagePickerView: View {
                     }
                     
                     if pickerLimit > 1 || pickerLimit > 0 {
-                        ImagePickerButton(label: { Text("Add") }, completion: onImagesPicked, selectionLimit: pickerLimit)
+                        ImagePickerButton(label: { Text("Add") }, selectionLimit: pickerLimit, completion: onImagesPicked)
                             .disabled(pickerLimit == 0)
                             .frame(width: 100, height: 100)
                     }
