@@ -33,7 +33,6 @@ class PublishService: PublishServicing {
                     plugins: [
                         .splash(withClassPrefix: ""),
                         .darkImage(),
-                        .itemImage(),
                         .tinySlider(jsPath: "/modules/tiny-slider/src/tiny-slider.js", defaultConfig: [
                             "mouseDrag": true,
                             "swipeAngle": false,

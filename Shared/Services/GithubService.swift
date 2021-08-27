@@ -224,7 +224,7 @@ class GithubService: GithubServicing {
     }
 
     func fetchResourcesList(of type: ContentType, pagename: String? = nil, completion: @escaping (Result<[ContentItem], Error>) -> Void) {
-        fetchList(of: type, folder: "Resources/img", pagename: pagename, completion: completion)
+        fetchList(of: type, folder: "Resources", pagename: pagename, completion: completion)
     }
 
     func fetchList(of type: ContentType, folder: String, pagename: String? = nil, completion: @escaping (Result<[ContentItem], Error>) -> Void) {

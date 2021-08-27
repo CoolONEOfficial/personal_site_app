@@ -35,6 +35,6 @@ enum ContentType: String, CaseIterable, Identifiable {
 
     func path(_ pagename: String, _ filename: String?, _ ext: String?) -> String? {
         if filename != nil, ext == nil { return nil }
-        return ["Resources", "img", rawValue, pagename.withoutExt, filename != nil ? "\(filename ?? "")\(ext ?? "")" : nil].compactMap { $0 }.joined(separator: "/")
+        return ["Resources", rawValue, pagename.withoutExt, filename != nil ? "\(filename ?? "")\(ext ?? "")" : nil].compactMap { $0 }.joined(separator: "/")
     }
 }
