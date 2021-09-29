@@ -16,6 +16,10 @@
 		2E51396D2703D5530004EA4D /* GCDWebServers in Frameworks */ = {isa = PBXBuildFile; productRef = 2E51396C2703D5530004EA4D /* GCDWebServers */; };
 		2E5139702703D5730004EA4D /* Ink in Frameworks */ = {isa = PBXBuildFile; productRef = 2E51396F2703D5730004EA4D /* Ink */; };
 		2E5139732703D5BA0004EA4D /* Splash in Frameworks */ = {isa = PBXBuildFile; productRef = 2E5139722703D5BA0004EA4D /* Splash */; };
+		2E5139782704E4B60004EA4D /* MarkdownMetadataEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5139772704E4B60004EA4D /* MarkdownMetadataEncoder.swift */; };
+		2E5139792704E4B60004EA4D /* MarkdownMetadataEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E5139772704E4B60004EA4D /* MarkdownMetadataEncoder.swift */; };
+		2E51397B2704E5D90004EA4D /* Array+appending.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E51397A2704E5D90004EA4D /* Array+appending.swift */; };
+		2E51397C2704E5D90004EA4D /* Array+appending.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E51397A2704E5D90004EA4D /* Array+appending.swift */; };
 		2E85416E2703CE1700FD117E /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E85416D2703CE1700FD117E /* Config.swift */; };
 		2E85416F2703CE1700FD117E /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E85416D2703CE1700FD117E /* Config.swift */; };
 		851F72ED26AB15D100E65D5F /* View+onFirstAppear.swift in Sources */ = {isa = PBXBuildFile; fileRef = 851F72EC26AB15D100E65D5F /* View+onFirstAppear.swift */; };
@@ -147,6 +151,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2E5139772704E4B60004EA4D /* MarkdownMetadataEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownMetadataEncoder.swift; sourceTree = "<group>"; };
+		2E51397A2704E5D90004EA4D /* Array+appending.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Array+appending.swift"; sourceTree = "<group>"; };
 		2E85416D2703CE1700FD117E /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		8508FC8E26BFDEFD00FF48A8 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		851F72E626AA36DF00E65D5F /* personal_site_app.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = personal_site_app.entitlements; sourceTree = "<group>"; };
@@ -375,6 +381,8 @@
 				85983BBF26A1AB060051DA2D /* Image.swift */,
 				851F72EC26AB15D100E65D5F /* View+onFirstAppear.swift */,
 				855E535C26BAA1AF00B8D6C4 /* String+path.swift */,
+				2E5139772704E4B60004EA4D /* MarkdownMetadataEncoder.swift */,
+				2E51397A2704E5D90004EA4D /* Array+appending.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
@@ -769,6 +777,7 @@
 				85EA6B8C26BEA46E008A3FBC /* PreviewViewModel.swift in Sources */,
 				85983BBA26A1A05E0051DA2D /* ImagePicker.swift in Sources */,
 				85EA6B6E26BD5881008A3FBC /* Node+nodes.swift in Sources */,
+				2E5139782704E4B60004EA4D /* MarkdownMetadataEncoder.swift in Sources */,
 				85EA6B5E26BD56A0008A3FBC /* ProjectMetadata.swift in Sources */,
 				85773ACC2690E1A9004083BE /* MainView.swift in Sources */,
 				85773B262691D9AF004083BE /* ErrorView.swift in Sources */,
@@ -781,6 +790,7 @@
 				851F72ED26AB15D100E65D5F /* View+onFirstAppear.swift in Sources */,
 				855E535D26BAA1AF00B8D6C4 /* String+path.swift in Sources */,
 				85EA6B5F26BD56A0008A3FBC /* BookMetadata.swift in Sources */,
+				2E51397B2704E5D90004EA4D /* Array+appending.swift in Sources */,
 				85773B232691CFC8004083BE /* PageViewModel.swift in Sources */,
 				85773B3D269346B8004083BE /* Navbar+color.swift in Sources */,
 				85EA6B7226BD5881008A3FBC /* Theme+Portfolio.swift in Sources */,
@@ -819,6 +829,7 @@
 				85BAF77626D2EFB100C46A91 /* NavigationLazyView.swift in Sources */,
 				85773AD02690E21A004083BE /* GithubService.swift in Sources */,
 				8591515326D2E18F001AC341 /* SplashPublishPlugin.swift in Sources */,
+				2E5139792704E4B60004EA4D /* MarkdownMetadataEncoder.swift in Sources */,
 				85773B272691D9AF004083BE /* ErrorView.swift in Sources */,
 				85773B3B26932781004083BE /* MetadataView.swift in Sources */,
 				85EA6B6F26BD5881008A3FBC /* Node+nodes.swift in Sources */,
@@ -833,6 +844,7 @@
 				85EA6B8926BE9A03008A3FBC /* PublishService.swift in Sources */,
 				85773B242691CFC8004083BE /* PageViewModel.swift in Sources */,
 				85773B3E269346B8004083BE /* Navbar+color.swift in Sources */,
+				2E51397C2704E5D90004EA4D /* Array+appending.swift in Sources */,
 				85773B352693276B004083BE /* EditorView.swift in Sources */,
 				85983BC126A1AB060051DA2D /* Image.swift in Sources */,
 				85773ACD2690E210004083BE /* MainView.swift in Sources */,
