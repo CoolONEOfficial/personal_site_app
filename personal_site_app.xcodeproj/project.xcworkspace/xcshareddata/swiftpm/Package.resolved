@@ -6,8 +6,8 @@
         "repositoryURL": "https://github.com/Alamofire/Alamofire",
         "state": {
           "branch": null,
-          "revision": "f96b619bcb2383b43d898402283924b80e2c4bae",
-          "version": "5.4.3"
+          "revision": "d120af1e8638c7da36c8481fd61a66c0c08dc4fc",
+          "version": "5.4.4"
         }
       },
       {
@@ -60,7 +60,7 @@
         "repositoryURL": "https://github.com/onevcat/Kingfisher",
         "state": {
           "branch": "master",
-          "revision": "49608a7c6d3ca0bddcd9fac1b33e0b8ca923fbb5",
+          "revision": "8c65ddf756c633d01d9ae01092bf72f0c66dfc60",
           "version": null
         }
       },
@@ -75,10 +75,10 @@
       },
       {
         "package": "Publish",
-        "repositoryURL": "http://github.com/CoolONEOfficial/Publish",
+        "repositoryURL": "https://github.com/CoolONEOfficial/Publish",
         "state": {
           "branch": "master",
-          "revision": "e2ded615ae412daa435578bb6b54367e1bc30dfe",
+          "revision": "ab123814bf863cf69ef63f2f28463e61d110b62a",
           "version": null
         }
       },
@@ -93,7 +93,7 @@
       },
       {
         "package": "Splash",
-        "repositoryURL": "https://github.com/johnsundell/splash.git",
+        "repositoryURL": "https://github.com/JohnSundell/Splash",
         "state": {
           "branch": null,
           "revision": "7f4df436eb78fe64fe2c32c58006e9949fa28ad8",
@@ -120,7 +120,7 @@
       },
       {
         "package": "Zip",
-        "repositoryURL": "http://github.com/marmelroy/zip",
+        "repositoryURL": "https://github.com/marmelroy/Zip",
         "state": {
           "branch": null,
           "revision": "bd19d974e8a38cc8d3a88c90c8a107386c3b8ccf",
