@@ -9,7 +9,7 @@ import Foundation
 import Alamofire
 import Ink
 import Zip
-import Publish
+//import Publish
 
 struct PageMetadata: Codable {
     var description: String
@@ -75,7 +75,7 @@ class Page: ObservableObject {
     @Published var title: String?
 
     init(from string: String) throws {
-        let markdown = MarkdownParser().parse(string)
+        let markdown = Ink.MarkdownParser().parse(string)
         let decoder = MarkdownMetadataDecoder(metadata: markdown.metadata, dateFormatter: DateFormatter.metadata)
         self.metadata = try PageMetadata(from: decoder)
         self.content = .init(string[string.index(string.indices(of: "---")[1], offsetBy: 4) ..< string.endIndex])
@@ -221,7 +221,7 @@ class GithubService: GithubServicing {
     // MARK: Fetch
     
     func fetchContentsList(of type: ContentType, pagename: String? = nil, completion: @escaping (Result<[ContentItem], Error>) -> Void) {
-        fetchList(of: type, folder: "Content", pagename: pagename, completion: completion)
+        fetchList(of: type, folder: "ru", pagename: pagename, completion: completion)
     }
 
     func fetchResourcesList(of type: ContentType, pagename: String? = nil, completion: @escaping (Result<[ContentItem], Error>) -> Void) {

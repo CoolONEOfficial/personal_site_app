@@ -11,7 +11,7 @@ import SwiftUI
 struct personal_site_appApp: App {
     var body: some Scene {
         WindowGroup {
-            MainView<MainViewModel>(viewModel: MainViewModel())
+            MainView(viewModel: MainViewModel())
         }
     }
 }

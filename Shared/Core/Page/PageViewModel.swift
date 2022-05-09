@@ -5,7 +5,7 @@
 //  Created by Nickolay Truhin on 04.07.2021.
 //
 
-import UIKit
+import SwiftUI
 
 enum Tab: Equatable {
     case editor
@@ -177,7 +177,7 @@ class PageViewModel: PageViewModeling {
         if withMiniature, let imageValue = image.value?.image {
             var image = image
 
-            let imageValueResized = imageValue.scalePreservingAspectRatio(targetSize: .init(width: 400, height: 400))
+            let imageValueResized = imageValue.scalePreservingAspectRatio(to: .init(width: 400, height: 400))
             image.value?.image = imageValueResized
 
             putImage(page: page, image: image, filename: filename + "_400x400", ext: ext, group: group)
@@ -239,7 +239,8 @@ extension Dictionary where Key: Comparable, Value: Equatable {
 }
 
 extension Image {
-    func scalePreservingAspectRatio(targetSize: CGSize) -> Image {
+    #if os(iOS)
+    func scalePreservingAspectRatio(to newSize: CGSize) -> Image {
         // Determine the scale factor that preserves aspect ratio
         let widthRatio = targetSize.width / size.width
         let heightRatio = targetSize.height / size.height
@@ -266,4 +267,25 @@ extension Image {
         
         return scaledImage
     }
+    #else
+    func scalePreservingAspectRatio(to newSize: CGSize) -> Image? {
+        if let bitmapRep = NSBitmapImageRep(
+            bitmapDataPlanes: nil, pixelsWide: Int(newSize.width), pixelsHigh: Int(newSize.height),
+            bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+            colorSpaceName: .calibratedRGB, bytesPerRow: 0, bitsPerPixel: 0
+        ) {
+            bitmapRep.size = newSize
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmapRep)
+            draw(in: NSRect(x: 0, y: 0, width: newSize.width, height: newSize.height), from: .zero, operation: .copy, fraction: 1.0)
+            NSGraphicsContext.restoreGraphicsState()
+
+            let resizedImage = NSImage(size: newSize)
+            resizedImage.addRepresentation(bitmapRep)
+            return resizedImage
+        }
+
+        return nil
+    }
+    #endif
 }

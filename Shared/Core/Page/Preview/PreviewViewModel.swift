@@ -52,8 +52,8 @@ class PreviewViewModel: PreviewViewModeling {
     let pagename: String
     
     private let githubService: GithubServicing = GithubService()
-    private let previewServerService: PreviewServerServicing = PreviewServerService.default
-    private let publishService: PublishServicing = PublishService()
+//    private let previewServerService: PreviewServerServicing = PreviewServerService.default
+//    private let publishService: PublishServicing = PublishService()
     
     private lazy var docUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
     private lazy var contentUrl = docUrl.appendingPathComponent("Content")
@@ -72,7 +72,7 @@ class PreviewViewModel: PreviewViewModeling {
     }
     
     func onDisappear() {
-        previewServerService.stop()
+       // previewServerService.stop()
     }
     
     func reloadRepo() {
@@ -136,23 +136,23 @@ private extension PreviewViewModel {
     }
     
     func generatePreview() {
-        publishService.generate(url: docUrl) { [self] result in
-            DispatchQueue.main.async {
-                switch result {
-                case let .success(outputUrl):
-                    startServer(outputUrl: outputUrl)
-                    
-                case let .failure(error):
-                    self.state = .error(error)
-                }
-            }
-        }
+//        publishService.generate(url: docUrl) { [self] result in
+//            DispatchQueue.main.async {
+//                switch result {
+//                case let .success(outputUrl):
+//                    startServer(outputUrl: outputUrl)
+//
+//                case let .failure(error):
+//                    self.state = .error(error)
+//                }
+//            }
+//        }
     }
     
     func startServer(outputUrl: URL) {
-        previewServerService.start(path: outputUrl.path)
-        if let url = previewServerService.serverUrl {
-            self.state = .url(url.appendingPathComponent(type.rawValue).appendingPathComponent(pagename).appendingPathComponent("index.html"))
-        }
+//        previewServerService.start(path: outputUrl.path)
+//        if let url = previewServerService.serverUrl {
+//            self.state = .url(url.appendingPathComponent(type.rawValue).appendingPathComponent(pagename).appendingPathComponent("index.html"))
+//        }
     }
 }

@@ -6,13 +6,13 @@
 //
 
 import SwiftUI
-import Publish
-import Files
-import Zip
-import GCDWebServers
+//import Publish
+//import Files
+//import Zip
+//import GCDWebServers
 
 struct MainView<Model: MainViewModeling>: View {
-    @ObservedObject var viewModel: Model
+    @StateObject var viewModel: Model
     @State var isPageActive = [ContentType: [String: Bool]]()
     
     @State private var isGroupOpened: ContentType?
@@ -144,7 +144,9 @@ struct MainView<Model: MainViewModeling>: View {
     var body: some View {
         NavigationView {
             entriesSection
+            #if os(iOS)
                 .navigationBarHidden(viewModel.isLoading && (viewModel.state.items?.isEmpty ?? true))
+            #endif
                 .navigationTitle("Sections")
                 .listStyle(SidebarListStyle())
         }.onFirstAppear {

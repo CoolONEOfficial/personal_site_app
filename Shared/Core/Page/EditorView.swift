@@ -116,7 +116,7 @@ struct EditorView: View {
         }
     }
 
-    private func appendImage(_ image: UIImage) -> String {
+    private func appendImage(_ image: Image) -> String {
         let keyName = nextKey
         attachedImages[keyName] = .local(image)
         return "![ ](\(keyName))"

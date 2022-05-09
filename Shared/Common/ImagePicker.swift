@@ -33,7 +33,7 @@ struct ImagePickerButton<T: View>: View {
             showImagePicker = true
             #else
             NSImagePicker(
-                selectionLimit: pickerLimit,
+                selectionLimit: selectionLimit,
                 onImagesPicked
             ).pick()
             #endif

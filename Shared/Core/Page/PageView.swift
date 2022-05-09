@@ -127,14 +127,15 @@ struct PageView<Model: PageViewModeling>: View {
     }
     
     func previewView(page: Page) -> some View {
-        PreviewView(
-            viewModel: PreviewViewModel(
-                content: page.content,
-                type: page.metadata.type!,
-                pagename: viewModel.pagename
-            ),
-            page: page,
-            attachedImages: $viewModel.attachedImages.value
-        )
+        Text("preview")
+//        PreviewView(
+//            viewModel: PreviewViewModel(
+//                content: page.content,
+//                type: page.metadata.type!,
+//                pagename: viewModel.pagename
+//            ),
+//            page: page,
+//            attachedImages: $viewModel.attachedImages.value
+//        )
     }
 }
