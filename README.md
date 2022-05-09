@@ -1,1 +1,18 @@
-personal_site_app
+# Personal site app
+
+## Get started
+
+1) `tuist fetch`
+2) `tuist generate`
+
+## How to switch between iOS and macOS versions of app?
+
+Unfortunately tuist doesn't support multiplatform targets or dependencies (via SPM as I know) so use that command to switch to macOS or iOS:
+
+### Switch to macos:
+ `export TUIST_PLATFORM=macOS`
+ `tuist clean && tuist fetch && tuist generate`
+
+### Switch to iOS:
+ `export TUIST_PLATFORM=iOS` (optional because iOS is default)
+ `tuist clean && tuist fetch && tuist generate`
