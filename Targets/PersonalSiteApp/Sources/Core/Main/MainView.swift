@@ -145,8 +145,8 @@ struct MainView<Model: MainViewModeling>: View {
             #endif
                 .navigationTitle("Sections")
                 .listStyle(SidebarListStyle())
-        }.onFirstAppear {
-            viewModel.refreshContent()
+        }.task {
+            await viewModel.onFirstAppear()
             #if os(iOS)
             UIScrollView.appearance().keyboardDismissMode = .onDrag
             #endif

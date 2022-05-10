@@ -33,5 +33,7 @@ let project = Project.app(
         "Ink",
         "PortfolioSite",
         "Telegraph",
+        "OAuthSwift",
+        "KeychainSwift",
     ]
 )

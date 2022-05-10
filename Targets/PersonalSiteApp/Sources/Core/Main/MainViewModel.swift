@@ -34,6 +34,7 @@ enum MainViewState {
 protocol MainViewModeling: ObservableObject {
     var state: MainViewState { get set }
     var isLoading: Bool { get set }
+    func onFirstAppear() async
     func refreshContent()
     func onDelete(items: [ContentItem])
     func deleteCompletion(confirm: Bool, deletedItems: [ContentItem], oldItems: MainViewState.Items?)
@@ -41,6 +42,7 @@ protocol MainViewModeling: ObservableObject {
 
 class MainViewModel: MainViewModeling {
     private let githubService: GithubServicing = GithubService()
+    private let authService: AuthServicing = AuthService()
 
     @Published var state: MainViewState = .items(.init())
     @Published var isLoading = false
@@ -50,6 +52,17 @@ class MainViewModel: MainViewModeling {
             onDelete(items: deletedItems)
         } else {
             state.items = oldItems
+        }
+    }
+
+    @MainActor
+    func onFirstAppear() async {
+        switch await authService.authorizeIfNeeded() {
+        case .success:
+            refreshContent()
+            
+        case let .failure(error):
+            state = .error(error)
         }
     }
     

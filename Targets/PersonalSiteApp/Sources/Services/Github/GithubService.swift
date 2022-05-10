@@ -23,14 +23,23 @@ protocol GithubServicing {
     func unpackRepo(progressHandler: @escaping (Double) -> Void, from fileUrl: URL, to unzipUrl: URL, completion: @escaping (Result<Void, Error>) -> Void)
 }
 
-class GithubService: GithubServicing {
+class GithubService {
     static let apiBase = "https://api.github.com"
     
     static let apiContentsBase = apiBase + "/repos/" + repo + "/contents"
     
     static let base = "https://github.com"
     
-    private let headers = HTTPHeaders([ .accept("application/vnd.github.v3+json"), .authorization("token " + Config.token) ])
+    private let keychainService: KeychainServicing = KeychainService()
+    
+    enum ServiceError: Swift.Error {
+        case tokenNotFound
+    }
+    
+    private func headers() throws -> HTTPHeaders {
+        guard let token = keychainService.credential?.oauthToken else { throw ServiceError.tokenNotFound }
+        return .init([ .accept("application/vnd.github.v3+json"), .authorization("token " + token) ])
+    }
     
     static let repo = "CoolONEOfficial/personal_site"
 
@@ -45,6 +54,9 @@ class GithubService: GithubServicing {
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         return decoder
     }()
+}
+
+extension GithubService: GithubServicing {
 
     func downloadRepo(progressHandler: @escaping (Double) -> Void, completion: @escaping (Result<URL?, Error>) -> Void) {
         let fm = FileManager.default
@@ -91,8 +103,12 @@ class GithubService: GithubServicing {
     }
     
     func fetchList(path: String, completion: @escaping (Result<[ContentItem], Error>) -> Void) {
-        AF.request(path, method: .get, headers: headers)
+        do {
+            AF.request(path, method: .get, headers: try headers())
             .responseDecodable(of: [ContentItem].self, decoder: decoder, completionHandler: makeCompletion(completion))
+        } catch {
+            completion(.failure(error))
+        }
     }
     
     func fetchItem(path: String, completion: @escaping (Result<ContentItem?, Error>) -> Void) {
@@ -100,19 +116,27 @@ class GithubService: GithubServicing {
     }
 
     func fetchPage(item: ContentItem, completion: @escaping (Result<Page, Error>) -> Void) {
-        AF.request(item.downloadUrl, method: .get, headers: headers)
-            .responseString {
-                completion($0.tryMap {
-                    try Page(from: $0)
-                }.result)
-            }
+        do {
+            AF.request(item.downloadUrl, method: .get, headers: try headers())
+                .responseString {
+                    completion($0.tryMap {
+                        try Page(from: $0)
+                    }.result)
+                }
+        } catch {
+            completion(.failure(error))
+        }
     }
 
     // MARK: Put
     
     private func putItem(request: PutItemRequest, path: String, completion: @escaping (Result<Void, Error>) -> Void) {
-        AF.request("\(Self.apiContentsBase)/\(path)", method: .put, parameters: request, encoder: JSONParameterEncoder.default, headers: headers)
-            .responseDecodable(of: PutItemResponse.self, decoder: decoder, completionHandler: makeVoidCompletion(completion))
+        do {
+            AF.request("\(Self.apiContentsBase)/\(path)", method: .put, parameters: request, encoder: JSONParameterEncoder.default, headers: try headers())
+                .responseDecodable(of: PutItemResponse.self, decoder: decoder, completionHandler: makeVoidCompletion(completion))
+        } catch {
+            completion(.failure(error))
+        }
     }
 
     func overwriteItem(item: ContentItem, content: Data, completion: @escaping (Result<Void, Error>) -> Void) {
@@ -126,8 +150,12 @@ class GithubService: GithubServicing {
     // MARK: Delete
     
     private func deleteItem(request: DeleteItemRequest, path: String, completion: @escaping (Result<Void, Error>) -> Void) {
-        AF.request("\(Self.apiContentsBase)/\(path)", method: .delete, parameters: request, encoder: JSONParameterEncoder.default, headers: headers)
-            .responseDecodable(of: PutItemResponse.self, decoder: decoder, completionHandler: makeVoidCompletion(completion))
+        do {
+            AF.request("\(Self.apiContentsBase)/\(path)", method: .delete, parameters: request, encoder: JSONParameterEncoder.default, headers: try headers())
+                .responseDecodable(of: PutItemResponse.self, decoder: decoder, completionHandler: makeVoidCompletion(completion))
+        } catch {
+            completion(.failure(error))
+        }
     }
     
     func deleteItem(item: ContentItem, completion: @escaping (Result<Void, Error>) -> Void) {
@@ -259,17 +287,5 @@ private extension GithubService {
 
     func makeVoidCompletion<T>(_ completion: @escaping (Result<Void, Error>) -> Void) -> (DownloadResponse<T, AFError>) -> Void {
         makeCompletion { completion($0.map { _ in () }) }
-    }
-}
-
-extension FileManager {
-    func getDocumentsDirectory() -> URL {
-        let paths = urls(for: .documentDirectory, in: .userDomainMask)
-        let documentsDirectory = paths[0]
-        return documentsDirectory
-    }
-    
-    func contentsOfDirectory(at url: URL) throws -> [URL] {
-        try contentsOfDirectory(at: url, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
     }
 }

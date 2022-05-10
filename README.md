@@ -2,6 +2,12 @@
 
 ## Get started
 
+Add secrets.xcconfig at root of the project with:
+
+```
+CONSUMER_SECRET=<key>
+```
+
 1) `tuist fetch`
 2) `tuist generate`
 

@@ -6,12 +6,17 @@
 //
 
 import SwiftUI
+import OAuthSwift
 
 @main
 struct personal_site_appApp: App {
     var body: some Scene {
         WindowGroup {
-            MainView(viewModel: MainViewModel())
+            MainView(viewModel: MainViewModel()).onOpenURL { url in
+                if url.host == "oauth-callback" {
+                    OAuthSwift.handle(url: url)
+                }
+            }
         }
     }
 }

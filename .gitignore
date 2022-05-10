@@ -108,3 +108,6 @@ Derived/
 
 ### Tuist managed dependencies ###
 Tuist/Dependencies
+
+### Secrets
+secrets.xcconfig

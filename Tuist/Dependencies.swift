@@ -27,6 +27,8 @@ let dependencies = Dependencies(
         .remote(url: "https://github.com/onevcat/Kingfisher", requirement: .upToNextMajor(from: "7.0.0")),
         .remote(url: "https://github.com/CoolONEOfficial/personal_site", requirement: .branch("mobile")),
         .remote(url: "https://github.com/Building42/Telegraph.git", requirement: .upToNextMajor(from: "0.29")),
+        .remote(url: "https://github.com/OAuthSwift/OAuthSwift.git", requirement: .upToNextMajor(from: "2.2.0")),
+        .remote(url: "https://github.com/evgenyneu/keychain-swift", requirement: .upToNextMajor(from: "20.0.0"))
     ],
     platforms: [ targetPlatform() ] // TODO: multiplatform
 )

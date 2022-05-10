@@ -59,15 +59,26 @@ extension Project {
         for platform in platforms {
             let nameWithPlatform = "\(name)_\(platform.rawValue)"
             let infoPlist: [String: InfoPlist.Value]
+            let secretsPlistPart = SecretKeys.allCases.map(\.rawValue).reduce( [String: InfoPlist.Value]()) { dict, key in
+                var dict = dict
+                dict[key] = "$(\(key)"
+                return dict
+            }
             
             switch platform {
             case .iOS:
                 infoPlist = [
                     "CFBundleShortVersionString": "1.0",
                     "CFBundleVersion": "1",
+                    "CFBundleURLTypes": [
+                        [
+                            "CFBundleTypeRole": "Editor",
+                            "CFBundleURLSchemes": ["personal-site-app"]
+                        ]
+                    ],
                     "UIMainStoryboardFile": "",
                     "UILaunchStoryboardName": "LaunchScreen"
-                ]
+                ].merging(secretsPlistPart) { first, _ in first }
                 
             case .macOS:
                 infoPlist = [
@@ -75,7 +86,7 @@ extension Project {
                     "CFBundleVersion": "1",
                     "NSMainStoryboardFile": "",
                     "UILaunchStoryboardName": "LaunchScreen"
-                ]
+                ].merging(secretsPlistPart) { first, _ in first }
             
             default:
                 fatalError("plist not provided for \(platform.rawValue)")
@@ -90,7 +101,7 @@ extension Project {
                 sources: ["Targets/\(name)/Sources/**"],
                 resources: ["Targets/\(name)/Resources/**"],
                 dependencies: otherDependencies
-                    + targetDependencies.map { name in .target(name: name + "_\(platform.rawValue)") }
+                + targetDependencies.map { name in .target(name: name + "_\(platform.rawValue)") }, settings: .settings(configurations: [ .debug(name: .debug, xcconfig: "secrets.xcconfig") ])
             )
             
             targets.append(mainTarget)
